@@ -1,0 +1,12 @@
+[PagerDuty] WebCore - Hangfire recurring job stuck, manual intervention needed
+
+Incident: QEXAMPLE000001
+Service: PEXAMP1 (Platform - Datadog - High)
+Triggered: 2026-09-14T03:05:00Z
+
+Hangfire recurring job queue depth on jobs-recurring.acme.example has not drained
+since 02:10Z. ScheduleUserRemindersJob last completed 2026-09-13T02:11Z.
+An Octopus deploy (ServerTasks-1000001, release 1000003-rc) ran at 01:58Z against
+Production - Blue.
+
+Manual intervention needed.

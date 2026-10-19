@@ -1,0 +1,12 @@
+[Sentry] search-service - SearchException from Elastic cluster
+
+Project: search-service
+Environment: production
+First seen: 2026-09-14T11:02:00Z
+Events: 884 in 15 minutes
+
+SearchException: all shards failed
+  at SearchService.Query.ElasticQueryExecutor.ExecuteAsync()
+
+Elastic endpoint: psc.us-central1.gcp.cloud.es.io
+Correlated: search-sync.acme.example sync lag 42 minutes and climbing.

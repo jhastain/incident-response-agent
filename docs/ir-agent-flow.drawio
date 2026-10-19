@@ -1,0 +1,334 @@
+<mxfile host="app.diagrams.net" modified="2026-08-28T18:00:00.000Z" agent="claude-code" version="24.7.17" type="device">
+  <diagram name="IR Agent E2E Flow" id="ir-agent-flow">
+    <mxGraphModel dx="1800" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1960" pageHeight="2700" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ============ TITLE ============ -->
+        <mxCell id="title" value="Incident Response Agent -- End-to-End Flow and Decision Points" style="text;html=1;fontSize=22;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="360" y="20" width="880" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Verified against app/agent.py, app/tier1_routing.py, app/sub_agents/**, app/tools/**, app/app_utils/**, integrations/pagerduty/ -- 2026-08-31&#10;Deployed to test: ae9934d, reasoningEngines/1000000000000000001 (project 000000000001). Diamonds = decisions. Dashed red = NOT working today." style="text;html=1;fontSize=12;align=center;verticalAlign=middle;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="360" y="54" width="880" height="34" as="geometry" />
+        </mxCell>
+
+        <!-- ============ LEGEND ============ -->
+        <mxCell id="legendBox" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#999999;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="1240" y="100" width="320" height="260" as="geometry" />
+        </mxCell>
+        <mxCell id="legendTitle" value="Legend" style="text;html=1;fontSize=14;fontStyle=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1256" y="108" width="120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lg1" value="Sequential agent" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1256" y="136" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lg2" value="Decision" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="1400" y="132" width="140" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="lg3" value="Parallel fan-out" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="1256" y="176" width="130" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lg4" value="Data store" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1408" y="176" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="lg5" value="NOT WORKING TODAY&#10;(shipped code, no data)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1256" y="226" width="130" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="lg6" value="Advisory text only&#10;(does not route)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1408" y="226" width="130" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="lg7" value="Tier 1 MEMBERSHIP is the static 9. Which of them actually&#10;investigate is chosen per run by tree_router from the&#10;category's Firestore decision tree (ADO-200023, PRs 110803&#10;/ 110800, merged 2026-08-25). The learning loop is live:&#10;finished incidents move hit_rate and bump the tree version." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="1256" y="272" width="290" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ============ ENTRY ============ -->
+        <mxCell id="entry" value="PagerDuty incident.triggered&#10;webhook" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="110" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="sigcheck" value="HMAC signature&#10;valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="90" y="190" width="180" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="sig403" value="403 -- reject&#10;(before any work)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="320" y="200" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="entryNote" value="pagerduty_client.verify_signature over the RAW body (main.py:186).&#10;Event type filtered, self-originated events skipped, then 202 ACK&#10;and BackgroundTasks._process (main.py:198-213).&#10;_process calls agent_client.investigate -&gt; reasoningEngines:streamQuery." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="80" y="266" width="400" height="46" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 1. CLASSIFIER ============ -->
+        <mxCell id="clf" value="1. alert_classifier&#10;-&gt; {classification}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="90" y="330" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="clfDec" value="DECISION 1&#10;category . severity . environment&#10;. service . gcp_project" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="60" y="400" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="clfNote" value="13 categories (categories.py CATEGORIES).&#10;sev1-4 by BLAST RADIUS, not alert wording.&#10;Non-prod is never sev1 unless stated.&#10;This one output drives every gate below --&#10;including which decision tree tree_router reads." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="320" y="400" width="290" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 2. INFRA CONTEXT ============ -->
+        <mxCell id="infra" value="2. infra_context&#10;-&gt; {service_context}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="90" y="530" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="infraDec" value="DECISION 2&#10;which context files to load?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="60" y="600" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="gcsCtx" value="GCS context/&#10;service-catalog.md&#10;domains/*.md&#10;patterns/**/*.md" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="340" y="590" width="150" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="infraNote" value="Category -&gt; file routing is in the PROMPT:&#10;deploy-release -&gt; domains/cicd-and-deployment.md&#10;sql-database/performance -&gt; patterns/.../sql-2022.md&#10;auth-security -&gt; patterns/security/auth-auth0.md&#10;Yields GCP projects, Datadog tag, Sentry project,&#10;and the per-service PIPELINE NAME.&#10;Only infra_context MUST precede Tier 1 -- Tier 1&#10;reads {service_context} (agent.py:19-27)." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="510" y="580" width="300" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 3. TREE ROUTER (SHIPPED) ============ -->
+        <mxCell id="trBox" value="3. tree_router -- SHIPPED and DEPLOYED (agent.py:47-49). Runs AFTER infra_context, BEFORE the Tier 1 barrier, so the tree can gate execution." style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;verticalAlign=top;fontStyle=1;fontColor=#4a7a34;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="60" y="720" width="1140" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="tr" value="tree_router&#10;custom BaseAgent, NO LLM&#10;(sub_agents/tree_router.py:38)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="80" y="770" width="210" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="trTrees" value="Firestore&#10;decision_trees&#10;/&lt;category&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="80" y="855" width="210" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="trDec" value="DECISION 3&#10;which Tier 1 agents does&#10;THIS category need?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="320" y="760" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="trPlan" value="Writes to session state:&#10;  tier1_plan          selected[] + skipped[{agent, reason}]&#10;  tier1_routing_note  one-line summary (read by synthesis)&#10;  tier1_focus_&lt;agent&gt; the tree step's `action` text, flat keys&#10;                      (ADK cannot index into a dict)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="590" y="755" width="320" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="trSelect" value="SELECTION = tree tier-1 steps INTERSECT DEFAULT_TIER1_SELECTION&#10;(tier1_routing.py:288). Firestore can only REMOVE an agent; it cannot&#10;ADD one the repo does not list -- an unresolvable name is a typo, not a&#10;routing instruction. Agents the tree omits are carried over from the&#10;in-repo default (line 292), so a stale tree does not read as exclusion.&#10;&#10;skip_rules: `&lt;field&gt; ==|!=|in|not in &lt;literal&gt;`, field limited to&#10;severity / environment / category / service_name, parsed with&#10;ast.literal_eval -- NOT eval(), because the string comes from a&#10;Firestore row (tier1_routing.py:143-210). An unparseable rule is&#10;recorded and IGNORED, never treated as firing." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="590" y="845" width="440" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="trFailOpen" value="FAIL OPEN -- all 9 run, and the plan says why&#10;(_fail_open_plan, tier1_routing.py:389)&#10;&#10;unknown-category . tree-unavailable&#10;tree-malformed . empty-selection&#10;get_triage_guidance raising (tree_router.py:54)&#10;&#10;Cost: median 0.39s, one Firestore read, no LLM." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="320" y="875" width="250" height="35" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 4. PARALLEL: TIER1 + HISTORY ============ -->
+        <mxCell id="parBox" value="4. tier1_with_history -- ParallelAgent (agent.py:29-33)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1;align=center;spacingTop=6" vertex="1" parent="1">
+          <mxGeometry x="60" y="960" width="1140" height="330" as="geometry" />
+        </mxCell>
+
+        <!-- historical context branch -->
+        <mxCell id="hist" value="historical_context&#10;-&gt; {past_incidents}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="90" y="1000" width="170" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="fsIncidents" value="Firestore&#10;incidents" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="90" y="1080" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="fsTrees" value="Firestore&#10;decision_trees&#10;(12 docs)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="215" y="1080" width="110" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="treeNote" value="historical_context ALSO calls get_triage_guidance, but only to&#10;render the steps as PROSE into {past_incidents} for synthesis&#10;and report. It runs CONCURRENTLY with Tier 1, so that copy&#10;cannot route anything -- tree_router (stage 3) is the one that&#10;gates, and it runs before the barrier.&#10;&#10;It runs here rather than before Tier 1 because {past_incidents}&#10;is consumed by synthesis/report only, never by Tier 1&#10;(agent.py:19-24)." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="90" y="1165" width="300" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- tier1 parallel -->
+        <mxCell id="t1box" value="tier1_parallel -- membership is the static 9; tree_router's plan gates which investigate (tier1/parallel.py:80-113)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#82b366;verticalAlign=top;align=center;fontSize=11;fontStyle=1;spacingTop=4;dashed=0" vertex="1" parent="1">
+          <mxGeometry x="420" y="995" width="760" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="t1a" value="gcp_logging&#10;findings_gcp_logging" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="435" y="1030" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1b" value="gcp_metrics&#10;SKIPPED -&gt; sentinel" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;dashed=1;fontColor=#777777" vertex="1" parent="1">
+          <mxGeometry x="585" y="1030" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1c" value="datadog_observability&#10;findings_datadog" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="735" y="1030" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1d" value="sentry_error&#10;findings_sentry" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="885" y="1030" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1e" value="cloud_run_health&#10;findings_cloud_run" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="1035" y="1030" width="130" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1f" value="deploy_correlation&#10;findings_deploy" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#b1ddf0;strokeColor=#10739e;fontSize=10;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="435" y="1090" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1g" value="known_issues&#10;findings_known_issues" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="585" y="1090" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1h" value="teams_context&#10;SKIPPED -&gt; sentinel" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;dashed=1;fontColor=#777777" vertex="1" parent="1">
+          <mxGeometry x="735" y="1090" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1i" value="compute_engine_health&#10;SKIPPED -&gt; sentinel" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;fontSize=10;dashed=1;fontColor=#777777" vertex="1" parent="1">
+          <mxGeometry x="885" y="1090" width="140" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="t1example" value="WORKED EXAMPLE&#10;category = application-errors&#10;6 selected, 3 skipped&#10;(DEFAULT_TIER1_SELECTION,&#10;tier1_routing.py:73-79)&#10;&#10;A different category selects&#10;a different subset." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;verticalAlign=top;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="1035" y="1090" width="130" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="t1gateNote" value="HOW THE GATE WORKS: each of the 9 carries a before_agent_callback that reads tier1_plan (tier1/parallel.py:58-77, 103).&#10;Not selected -&gt; the callback returns Content, which is ADK's supported skip (sets end_invocation on that agent's own branch context, google-adk 2.5.0).&#10;A skipped agent costs its scheduling slot only -- no model call, no tokens -- and its findings_* key is set to the skip_sentinel string (tier1_routing.py:403), because an&#10;UNSET key renders as &quot;&quot; and reads to synthesis as &quot;checked, found nothing&quot;. Selected agents get the tree's `action` appended to their prompt as tier1_focus_&lt;agent&gt;.&#10;Gating happens in a callback rather than by rebuilding the ParallelAgent per run: ADK enforces single parenting, and dynamic construction here has already failed twice." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#4a7a34;" vertex="1" parent="1">
+          <mxGeometry x="435" y="1145" width="590" height="45" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 5. SYNTHESIS ============ -->
+        <mxCell id="synth" value="5. synthesis_agent&#10;-&gt; {synthesis}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="90" y="1360" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="synthDec" value="DECISION 4&#10;cross-validate the findings sets.&#10;What is STRONG vs MODERATE vs WEAK?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="40" y="1430" width="280" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="synthNote" value="Reads all findings_* keys, {past_incidents}, and&#10;{tier1_routing_note?} (synthesis.py:58-59).&#10;A finding starting `NOT RUN -- skipped by decision tree`&#10;means that source was NEVER QUERIED: it is not an empty&#10;result, never corroborates, never cross-validates&#10;(synthesis.py:63-66, report.py:110-119)." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="340" y="1440" width="330" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 6. TIER 2 DISPATCH ============ -->
+        <mxCell id="t2disp" value="6. tier2_dispatcher&#10;-&gt; {tier2_findings}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="90" y="1580" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t2Dec" value="DECISION 5&#10;TIER2_DISPATCH_MATRIX[category]" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="1650" width="280" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="t2Matrix" value="app/categories.py:158-180 -- hardcoded in Python, not Firestore&#10;&#10;application-errors -&gt; codebase_agent&#10;business-logic -&gt; codebase_agent&#10;deploy-release -&gt; codebase_agent&#10;scheduled-jobs -&gt; sql_dba_agent&#10;data-integrity -&gt; sql_dba_agent, codebase_agent&#10;cloud-infrastructure -&gt; (none -- Tier 1 sufficient)&#10;sql-database -&gt; sql_dba_agent&#10;auth-security -&gt; auth_security_agent&#10;performance -&gt; sql_dba_agent, cache_agent&#10;monitoring-meta -&gt; sql_dba_agent  (misroute safety net, 2026-07-30)&#10;pubsub-messaging -&gt; pubsub_agent&#10;content-archive -&gt; codebase_agent&#10;unknown -&gt; (none)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="360" y="1570" width="380" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="t2agents" value="Tier 2 specialists, AgentTool-wrapped&#10;(dispatched only if mapped)&#10;sql_dba_agent . codebase_agent&#10;auth_security_agent . cache_agent&#10;pubsub_agent" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="780" y="1590" width="270" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="t2Note" value="The matrix reaches the model as PROMPT TEXT, and&#10;strict matrix obedience is a hard prompt rule: exactly the&#10;mapped agents, no more, no fewer. Empty list -&gt; return&#10;&quot;no Tier 2 needed&quot;, call nothing (tier2_dispatcher.py:44-61).&#10;&#10;Unlike Tier 1, this gate is static Python and is NOT learned&#10;-- decision trees do not drive Tier 2 dispatch." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="1590" width="300" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 7. REPORT ============ -->
+        <mxCell id="rep" value="7. report_agent&#10;-&gt; {report}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="90" y="1800" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="repDec" value="DECISION 6&#10;does this link QUALIFY?&#10;(tool-returned URL or documented&#10;format + real id from THIS run)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="30" y="1870" width="300" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="repNote" value="4 sections + Links trail. Severity emoji from classification.severity.&#10;NEVER emit an /_apis/ URL -- convert or cite by name.&#10;Copy tool-returned URLs BYTE-FOR-BYTE.&#10;A skipped source never earns a Key Findings bullet (report.py:110-119).&#10;Which Tier 1 agents the tree ran is TELEMETRY, never rendered in the&#10;report (report.py:353-358)." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1880" width="360" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 8. VERIFICATION ============ -->
+        <mxCell id="ver" value="8. verification_agent&#10;-&gt; {verification_result}" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="90" y="2020" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="verDec" value="DECISION 7&#10;automated_tier" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11" vertex="1" parent="1">
+          <mxGeometry x="70" y="2090" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="verTable" value="Tier is a function of DIAGNOSIS + evidence, nothing else.&#10;Efficiency never moves the tier on its own.&#10;&#10;MEDIUM -- STRONG diagnosis + evidence retrieved AND checked&#10;LOW -- WEAK diagnosis, OR root-cause figures left unchecked&#10;UNRELIABLE -- UNSUPPORTED diagnosis, OR no evidence retrievable&#10;                     at all, OR a central citation fails the time-window check&#10;HIGH -- NEVER automated. Requires human confirmation.&#10;&#10;Scores independently from raw session tool output to avoid&#10;anchoring on the report agent's own confidence." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="330" y="2030" width="400" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 9. PERSISTENCE ============ -->
+        <mxCell id="per" value="9. persistence_agent&#10;(code-only, no LLM)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="90" y="2230" width="180" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="gcsOut" value="GCS&#10;incident-summaries" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="340" y="2220" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="fsOut" value="Firestore&#10;incidents" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=8;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="510" y="2220" width="140" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="perNote" value="Deterministic: maps state into schema_version 2 JSON (~1s), no model call.&#10;Stores tier1_routing = {plan, note} -- tree_router logs at INFO, which never&#10;reaches Cloud Logging, so the stored incident is the only record of a narrowed run&#10;(persistence.py:247-252). Also stamps iragent.incident_id onto the run's root span&#10;(persistence.py:301) -- the id is minted here and never reaches session state." style="text;html=1;fontSize=10;align=left;verticalAlign=top;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="340" y="2296" width="560" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ============ LEARNING LOOP (IMPLEMENTED) ============ -->
+        <mxCell id="learnBox" value="THE LEARNING LOOP -- IMPLEMENTED AND LIVE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;verticalAlign=top;fontStyle=1;fontColor=#4a7a34;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="700" y="2210" width="500" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="learnAuto" value="record_incident_contributions(category, incident)&#10;persistence.py:350 -&gt; firestore_tools.py:469" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10" vertex="1" parent="1">
+          <mxGeometry x="720" y="2245" width="290" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="learnScore" value="decision_tree_learning.py&#10;is_incident_usable -&gt; score_contributions -&gt; apply_contributions&#10;An agent CONTRIBUTED when a distinctive artifact it produced&#10;(backticked span, URL, id-shaped token) reaches synthesis or&#10;report and was NOT handed to it in the alert or context.&#10;hit_rate = Beta posterior, PRIOR 0.5 weight 10, clamped 0.05-0.95:&#10;one incident moves a rate at most 0.045.&#10;Skipped agents are OMITTED, not scored a miss -- never running is&#10;not the same as running and finding nothing.&#10;Idempotent by applied_incident_ids; optimization_pinned freezes a&#10;tree; human_locked freezes one step's rate but keeps counting." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="720" y="2300" width="460" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="learnHuman" value="ENGINEER CORRECTION (out of band)&#10;scripts/correct_decision_tree.py -&gt; apply_engineer_correction&#10;(firestore_tools.py:669): reorder / set_action / set_hit_rate&#10;(+human_locked) / unlock / add|remove_skip_rule / pinned.&#10;Requires actor + reason. Bumps version, appends optimization_log.&#10;Corpus backfill: scripts/mine_decision_tree_hit_rates.py --apply." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="720" y="2372" width="460" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="learnState" value="LIVE STATE, read from Firestore aiops-test-project 2026-08-28:&#10;application-errors  v6  incident_count 5  hit_rate 0.3333 - 0.6667&#10;cloud-infrastructure v8  incident_count 7  hit_rate 0.3529 - 0.7059&#10;content-archive v1 (hand-set 0.4 - 1.0) . monitoring-meta v2&#10;The other 9 trees are still v1 at the 0.5 seed with incident_count 0 --&#10;they have not run a usable incident yet, not that the loop is broken." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4;fontColor=#2d5016" vertex="1" parent="1">
+          <mxGeometry x="1240" y="2210" width="480" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- ============ 10. NOTE BACK ============ -->
+        <mxCell id="note" value="10. pd.add_note(incident_id, report)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="2470" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="noteDec" value="_flatten_links_for_pagerduty()&#10;(pagerduty_client.py:40, 122)&#10;PD notes are PLAIN TEXT -- markdown&#10;hrefs do not render. Each URL printed&#10;once, on its LAST occurrence." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="360" y="2460" width="290" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ============ OBSERVABILITY LANE (separate) ============ -->
+        <mxCell id="obsBox" value="OBSERVABILITY LANE -- runs alongside every stage above, writes nothing into the investigation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fbfbfb;strokeColor=#7b61a8;verticalAlign=top;fontStyle=1;fontColor=#5a4080;spacingTop=6;dashed=0" vertex="1" parent="1">
+          <mxGeometry x="1600" y="100" width="330" height="1720" as="geometry" />
+        </mxCell>
+        <mxCell id="obsInit" value="setup_datadog_observability()&#10;app/fast_api_app.py:43 -- called at import,&#10;BEFORE any other tracer provider.&#10;LLMObs.enable(ml_app=ir-agent,&#10;service=ir-agent, env=$DD_ENV, agentless,&#10;sample_rate=1.0). No-op unless&#10;DD_LLMOBS_ENABLED. Never raises." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="1620" y="140" width="290" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="obsPlugin" value="DatadogRunPlugin -- App plugin&#10;agent.py:61-67, app_utils/dd_run_plugin.py&#10;ddtrace's ADK auto-instrumentation is OFF&#10;(DD_TRACE_GOOGLE_ADK_ENABLED=false), so&#10;every span below comes from this plugin." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="1620" y="255" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="obsRoot" value="ir.run -- ONE root span per run&#10;(dd_run_plugin.py:276; opened by the plugin&#10;because no tracer integration provides one)&#10;&#10;tags: iragent.category, .severity,&#10;.alert_source, .service_name, .environment,&#10;.outcome (completed|failed), .invocation_id,&#10;.incident_id (stamped by persistence)&#10;metrics: iragent.tokens_est, .cost_usd_est,&#10;.tool_calls" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="1620" y="350" width="290" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="obsSub" value="ir.sub_agent -- ONE child span per sub-agent&#10;(dd_run_plugin.py:292), opened in&#10;before_agent_callback, activate=false&#10;&#10;tag: iragent.sub_agent, .invocation_id&#10;metrics: iragent.input_tokens_est,&#10;.output_tokens_est, .tokens_est,&#10;.cost_usd_est (litellm list price),&#10;.tool_calls (counted in before_tool_callback)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="1620" y="510" width="290" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="obsSkipped" value="A SKIPPED TIER 1 AGENT STILL GETS A SPAN.&#10;before_agent_callback opens the span before&#10;the gate runs; the gate then returns Content,&#10;which makes ADK return before the after&#10;callbacks, so the span would never close.&#10;_close_orphans (dd_run_plugin.py:190-212)&#10;sweeps it, tags iragent.skipped=true and&#10;closes it. With partial flush off, ONE&#10;unfinished span silences the whole trace." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="1620" y="665" width="290" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="obsBf" value="BILLED COST -- Bifrost GET /api/logs&#10;at end of run (_write_run_cost,&#10;dd_run_plugin.py:131; bifrost_usage.py)&#10;&#10;Attribution: AttributingLiteLLMClient adds&#10;x-bf-lh-invocation_id / -agent / -sub_agent&#10;to every LiteLlm call (bf_headers.py:42-56,&#10;config.py:100,150). Bifrost stores each as&#10;metadata.&lt;key&gt; on the log record; the lookup&#10;matches on invocation_id + agent and groups&#10;locally by sub_agent (/api/logs has no&#10;metadata filter).&#10;&#10;Settle-polls the write lag every 8s on a 30s&#10;budget, off the event loop. Absent, never&#10;estimated, when Bifrost cannot answer:&#10;iragent.cost_source = bifrost | estimate_only.&#10;Writes iragent.cost_usd, .tokens,&#10;.billed_records." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="1620" y="810" width="290" height="255" as="geometry" />
+        </mxCell>
+        <mxCell id="obsMetrics" value="SPAN-BASED METRICS&#10;observability/datadog/spans_metrics_ir_agent.json&#10;applied by Apply-DatadogConfig.ps1&#10;&#10;ir_agent.sub_agent.{cost_usd_est, tokens_est,&#10;input_tokens_est, output_tokens_est, tool_calls}&#10;  group_by sub_agent, env&#10;ir_agent.run.{cost_usd, cost_usd_est, tokens,&#10;tokens_est}  group_by env, category, cost_source&#10;&#10;Needed because ir.sub_agent spans are plain APM&#10;spans with no LLM Obs span_kind, so they never&#10;reach ml_obs.span*, and ml_obs.* carries no tag&#10;that could hold a sub-agent name.&#10;Org-level config, deliberately NOT per-environment.&#10;NOT retroactive: a metric computes only from spans&#10;ingested after its definition exists." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4" vertex="1" parent="1">
+          <mxGeometry x="1620" y="1080" width="290" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="obsEval" value="EVALUATIONS -- SUBMITTED, NOT CHARTABLE&#10;&#10;root_agent.after_agent_callback =&#10;submit_verification_evaluations (agent.py:59,&#10;evaluators/verification_bridge.py). Four&#10;trace-scoped labels at zero extra token cost:&#10;ir_diagnosis_quality, ir_investigation_efficiency,&#10;ir_evidence_citation_ratio, ir_investigation_reliable.&#10;&#10;Datadog cannot chart them: ml_obs.evaluation&#10;returns ZERO SERIES org-wide (checked 2026-08-28)&#10;and the spans index has no @evaluation.* facet.&#10;An empty correctness panel reads as &quot;nothing&#10;failed&quot;, so no widget is built for them.&#10;Fixing it means emitting them as a custom metric." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;dashPattern=8 8;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4;fontColor=#7d2f2c" vertex="1" parent="1">
+          <mxGeometry x="1620" y="1335" width="290" height="215" as="geometry" />
+        </mxCell>
+        <mxCell id="obsGap" value="PER-SUB-AGENT BILLED COST -- WORKING&#10;&#10;Each ir.sub_agent span carries iragent.cost_usd&#10;and .tokens, summed from that sub-agent's own&#10;Bifrost /api/logs records via the&#10;x-bf-lh-sub_agent attribution header. Not a&#10;split of the run total -- the parts sum to it.&#10;&#10;Verified 2026-08-31 on ae9934d: 13 sub-agents&#10;returned billed dollars summing to 2.28421 USD,&#10;matching the run total exactly.&#10;&#10;The late write after span close never worked.&#10;ae9934d holds each sub-agent span OPEN until the&#10;/api/logs lookup returns, and records&#10;iragent.duration_ms for real elapsed time." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;dashPattern=8 8;align=left;verticalAlign=top;fontSize=10;spacingLeft=6;spacingTop=4;fontColor=#7d2f2c" vertex="1" parent="1">
+          <mxGeometry x="1620" y="1565" width="290" height="240" as="geometry" />
+        </mxCell>
+
+        <!-- ============ EDGES ============ -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="entry" target="sigcheck"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e2" value="no" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=10;" edge="1" parent="1" source="sigcheck" target="sig403"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e3" value="yes -&gt; 202 ACK" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=10;" edge="1" parent="1" source="sigcheck" target="clf"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="clf" target="clfDec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="clfDec" target="infra"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="infra" target="infraDec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;" edge="1" parent="1" source="infraDec" target="gcsCtx"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="infraDec" target="tr"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8b" value="reads decision_trees/&lt;category&gt;&#10;get_triage_guidance (firestore_tools.py:225)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;dashed=1;fontSize=10;" edge="1" parent="1" source="tr" target="trTrees"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8c" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="tr" target="trDec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8d" value="build_tier1_plan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=10;" edge="1" parent="1" source="trDec" target="trPlan"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8e" value="degraded" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=10;dashed=1;" edge="1" parent="1" source="trDec" target="trFailOpen"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e8f" value="tier1_plan gates the fan-out" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.15;entryY=0;fontSize=10;strokeColor=#82b366;strokeWidth=2;" edge="1" parent="1" source="trBox" target="parBox"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;dashed=1;" edge="1" parent="1" source="hist" target="fsIncidents"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.9;exitY=1;entryX=0.5;entryY=0;dashed=1;" edge="1" parent="1" source="hist" target="fsTrees"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e11" value="{service_context}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.2;fontSize=10;" edge="1" parent="1" source="hist" target="t1box"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e12" value="selected findings + skip sentinels" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;fontSize=10;" edge="1" parent="1" source="parBox" target="synth"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="180" y="1340" /></Array></mxGeometry></mxCell>
+        <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="synth" target="synthDec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="synthDec" target="t2disp"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="t2disp" target="t2Dec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e16" value="mapped" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;fontSize=10;" edge="1" parent="1" source="t2Matrix" target="t2agents"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;" edge="1" parent="1" source="t2Dec" target="t2Matrix"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="t2Dec" target="rep"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="rep" target="repDec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="repDec" target="ver"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="ver" target="verDec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;" edge="1" parent="1" source="verDec" target="verTable"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="verDec" target="per"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="per" target="gcsOut"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="gcsOut" target="fsOut"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#82b366;strokeWidth=2;" edge="1" parent="1" source="fsOut" target="learnAuto"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e26b" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#82b366;" edge="1" parent="1" source="learnAuto" target="learnScore"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="per" target="note"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;dashed=1;" edge="1" parent="1" source="note" target="noteDec"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e29" value="FEEDS BACK -- version++, incident_count++,&#10;hit_rate moves (firestore_tools.py:535-548)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#82b366;strokeWidth=2;fontColor=#4a7a34;fontSize=10;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="learnScore" target="trTrees"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1230" y="2332" /><mxPoint x="1230" y="880" /></Array></mxGeometry></mxCell>
+        <mxCell id="e30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0;exitY=0.5;entryX=0.5;entryY=1;strokeColor=#82b366;dashed=1;" edge="1" parent="1" source="learnHuman" target="learnScore"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#9673a6;dashed=1;" edge="1" parent="1" source="obsInit" target="obsPlugin"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#9673a6;" edge="1" parent="1" source="obsPlugin" target="obsRoot"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e33" value="child_of" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#9673a6;fontSize=10;" edge="1" parent="1" source="obsRoot" target="obsSub"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#9673a6;dashed=1;" edge="1" parent="1" source="obsSub" target="obsSkipped"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e35" value="end of run" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#9673a6;fontSize=10;" edge="1" parent="1" source="obsSkipped" target="obsBf"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#9673a6;" edge="1" parent="1" source="obsBf" target="obsMetrics"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e37" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#b85450;dashed=1;" edge="1" parent="1" source="obsMetrics" target="obsEval"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="e38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#b85450;dashed=1;" edge="1" parent="1" source="obsEval" target="obsGap"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

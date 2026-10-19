@@ -1,0 +1,12 @@
+[Datadog Monitor] WebCore PROD - admin/login error rate above threshold
+
+Monitor: WebCore PROD - admin login 5xx rate
+Triggered: 2026-09-14T14:32:00Z
+Service: webcore-prod-run-apiv2-us-c1  (project acme-production-100000)
+Environment: production
+
+error rate on POST /api/admin/login climbed from 0.2% to 9.4% over 12 minutes.
+Top error: UnauthorizedAccessException in App.Core.Auth.AdminLoginHandler.
+Affected users: 418 distinct. No corresponding spike on /api/login.
+
+Dashboard: https://app.datadoghq.com/dashboard/aaa-111-bbb

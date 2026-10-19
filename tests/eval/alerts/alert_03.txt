@@ -1,0 +1,13 @@
+[Sentry] webcore-dotnet - AppSqlException spike
+
+Project: webcore-dotnet
+Environment: production
+First seen: 2026-09-14T09:41:00Z
+Events: 6,215 in 20 minutes
+
+App.Core.Types.AppExceptions.AppSqlException: Timeout expired getting DataTable
+  at App.Data.Repositories.OrderLineItemRepository.GetBudgetRows()
+  at App.Business.Managers.OrderLineItemManager.RecalculateBudget()
+
+Server: sqlprod-c1.webcore-prod.internal
+Release: 1000004-rc

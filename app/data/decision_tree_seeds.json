@@ -1,0 +1,953 @@
+[
+  {
+    "category": "application-errors",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "sentry_agent",
+        "action": "Search for matching exceptions and error patterns",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "gcp_logging_agent",
+        "action": "Search Cloud Logging for ERROR/WARNING entries",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "datadog_agent",
+        "action": "Check APM traces and error tracking",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "deploy_correlation_agent",
+        "action": "Correlate with recent deployments",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "codebase_agent",
+        "action": "Analyze code for error handling patterns",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "known_issues_agent",
+        "action": "Search ADO for related application error bugs",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "gcp_metrics_agent",
+        "action": "Check for metric anomalies",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "cloud_run_health_agent",
+        "action": "Check service health and revisions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for related discussions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "business-logic",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "sentry_agent",
+        "action": "Search for business logic exceptions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "gcp_logging_agent",
+        "action": "Search for business validation errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "datadog_agent",
+        "action": "Check business metric anomalies",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "codebase_agent",
+        "action": "Review business logic implementation",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for recent business logic changes",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "known_issues_agent",
+        "action": "Search for known business logic issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "gcp_metrics_agent",
+        "action": "Check for metric anomalies",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "cloud_run_health_agent",
+        "action": "Check service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for business requirement discussions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "deploy-release",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "deploy_correlation_agent",
+        "action": "Analyze recent deployments and PRs",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "gcp_logging_agent",
+        "action": "Check deployment logs for errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "cloud_run_health_agent",
+        "action": "Check revision rollout status",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "codebase_agent",
+        "action": "Review deployment configuration changes",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "datadog_agent",
+        "action": "Check deployment metrics and APM",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "sentry_agent",
+        "action": "Check for new errors post-deployment",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "known_issues_agent",
+        "action": "Search for known deployment issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "gcp_metrics_agent",
+        "action": "Check deployment impact metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for deployment notifications",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "scheduled-jobs",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "gcp_logging_agent",
+        "action": "Search for scheduled job execution logs",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "datadog_agent",
+        "action": "Check job execution metrics and timing",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "sql_dba_agent",
+        "action": "Check for database locks or long-running queries",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "sentry_agent",
+        "action": "Check for job execution errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "known_issues_agent",
+        "action": "Search for known scheduled job issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "gcp_metrics_agent",
+        "action": "Check scheduler metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "deploy_correlation_agent",
+        "action": "Check if job logic recently changed",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "cloud_run_health_agent",
+        "action": "Check job service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for job-related discussions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "data-integrity",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "gcp_logging_agent",
+        "action": "Search for data validation errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "sql_dba_agent",
+        "action": "Check for constraint violations and data anomalies",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "sentry_agent",
+        "action": "Check for data integrity exceptions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "codebase_agent",
+        "action": "Review data validation logic",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "datadog_agent",
+        "action": "Check data quality metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "known_issues_agent",
+        "action": "Search for known data integrity issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for schema or migration changes",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "gcp_metrics_agent",
+        "action": "Check database metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "cloud_run_health_agent",
+        "action": "Check service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for data-related discussions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 11,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "cloud-infrastructure",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "cloud_run_health_agent",
+        "action": "Check service health and resource allocation",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "gcp_metrics_agent",
+        "action": "Check infrastructure metrics and quotas",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "gcp_logging_agent",
+        "action": "Search for infrastructure errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM and network health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "datadog_agent",
+        "action": "Check infrastructure dashboards",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for infrastructure changes",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "sentry_agent",
+        "action": "Check for infrastructure-related errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "known_issues_agent",
+        "action": "Search for known infrastructure issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for infrastructure alerts",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "sql-database",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "datadog_agent",
+        "action": "Check database performance metrics and slow queries",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "sql_dba_agent",
+        "action": "Analyze query performance and blocking",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "gcp_logging_agent",
+        "action": "Search for database errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "gcp_metrics_agent",
+        "action": "Check Cloud SQL metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "sentry_agent",
+        "action": "Check for database connection errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "known_issues_agent",
+        "action": "Search for known database issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for schema changes or migrations",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "cloud_run_health_agent",
+        "action": "Check database client service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for database-related discussions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "auth-security",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "gcp_logging_agent",
+        "action": "Search for authentication and authorization errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "auth_security_agent",
+        "action": "Analyze auth flow and token validation",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "datadog_agent",
+        "action": "Check auth metrics and failed login attempts",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "sentry_agent",
+        "action": "Check for auth-related exceptions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for auth service changes",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "known_issues_agent",
+        "action": "Search for known auth issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "gcp_metrics_agent",
+        "action": "Check auth service metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "cloud_run_health_agent",
+        "action": "Check auth service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for security alerts",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "performance",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "datadog_agent",
+        "action": "Check APM traces and performance metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "gcp_metrics_agent",
+        "action": "Check resource utilization metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "sql_dba_agent",
+        "action": "Check for slow queries and blocking",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "cache_agent",
+        "action": "Check cache hit rates and performance",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "gcp_logging_agent",
+        "action": "Search for timeout and latency errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "cloud_run_health_agent",
+        "action": "Check service scaling and resources",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "sentry_agent",
+        "action": "Check for timeout exceptions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for performance-impacting changes",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "known_issues_agent",
+        "action": "Search for known performance issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for performance discussions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 11,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM performance if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "monitoring-meta",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "gcp_metrics_agent",
+        "action": "Check monitoring system health and metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "datadog_agent",
+        "action": "Check Datadog agent health and metrics pipeline",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "gcp_logging_agent",
+        "action": "Search for monitoring system errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "cloud_run_health_agent",
+        "action": "Check monitoring service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "sentry_agent",
+        "action": "Check Sentry service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "known_issues_agent",
+        "action": "Search for known monitoring issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for monitoring config changes",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for monitoring alerts",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "pubsub-messaging",
+    "version": 1,
+    "triage_steps": [
+      {
+        "order": 1,
+        "agent": "gcp_logging_agent",
+        "action": "Search for Pub/Sub publish/subscribe errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 2,
+        "agent": "gcp_metrics_agent",
+        "action": "Check Pub/Sub backlog and throughput metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 3,
+        "agent": "pubsub_agent",
+        "action": "Analyze subscription backlog and dead letter queue",
+        "tier": 2,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 4,
+        "agent": "datadog_agent",
+        "action": "Check message processing metrics",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 5,
+        "agent": "sentry_agent",
+        "action": "Check for message processing errors",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 6,
+        "agent": "known_issues_agent",
+        "action": "Search for known Pub/Sub issues",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 7,
+        "agent": "deploy_correlation_agent",
+        "action": "Check for subscriber service changes",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 8,
+        "agent": "cloud_run_health_agent",
+        "action": "Check subscriber service health",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 9,
+        "agent": "teams_context_agent",
+        "action": "Check Teams for messaging discussions",
+        "tier": 1,
+        "hit_rate": 0.5
+      },
+      {
+        "order": 10,
+        "agent": "compute_engine_health_agent",
+        "action": "Check VM health if applicable",
+        "tier": 1,
+        "hit_rate": 0.5
+      }
+    ],
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  },
+  {
+    "category": "content-archive",
+    "version": 1,
+    "system_model": "ContentArchive-Configure (def 501, trigger:none) is the LAST link in a chain; it never self-schedules. Request(2452, cron 1:30AM CT) creates WebCore PR 'Archive Site - <yesterday>' -> WebCore branch policy -> Ephemeral-Build(2584) -> Obtain-Env(2361)+SolutionBuild(queues Solution-Tests 2415, FRAGILE)+CallDeployStage(condition succeeded()) -> Ephemeral-Deploy(2362) -> CallConfigureContentArchiveStage(if IS_ARCHIVE_SITE=='true') -> queues Configure(2451). Monitor DD 16605223 (US5) default_zero(query2).current('1d')<1, eval 10AM CT.",
+    "source_of_truth_order": "ADO builds API > repo file/branch state > Datadog CI Visibility > memory. ADO wins over Datadog on disagreement.",
+    "triage_steps": [
+      {
+        "order": 0,
+        "agent": "historical_context_agent",
+        "action": "ORIENT (read first): ContentArchive-Configure (def 501, trigger:none) is the LAST link in a chain and never self-schedules. Chain: Request(2452, cron 1:30AM CT) -> WebCore PR 'Archive Site - <yesterday>' -> Ephemeral-Build(2584) -> Obtain-Env(2361)+SolutionBuild(queues Solution-Tests 2415)+CallDeployStage(succeeded()) -> Ephemeral-Deploy(2362) -> queues Configure(2451). Monitor DD 16605223. SOURCE-OF-TRUTH: ADO builds API > repo/branch state > Datadog CI > memory (ADO wins). GOTCHAS: never time-filter get_builds (use top+queryOrder); alert-card IDs are BUILD ids not DEF ids (Configure def=2451); mergeStatus 3=healthy; build result 2=ok/8=fail/32=canceled; get_run.result can lie -> use get_builds/get_build_status; Datadog Logs has NO CI Visibility -> use list_traces/ADO; state evidence tier per claim.",
+        "tier": 1,
+        "hit_rate": 1.0
+      },
+      {
+        "order": 1,
+        "agent": "deploy_correlation_agent",
+        "action": "NODE A - true no-run? get_builds(project=AcmeProjects, def=2451, top=5, queryOrder=QueueTimeDescending, NO time filter). Ran today+result=2 -> false alarm/telemetry lag (close). Ran+result=8 -> failed internally (go to NODE F). None today (last is yesterday) -> true no-run (NODE B).",
+        "tier": 1,
+        "hit_rate": 0.9
+      },
+      {
+        "order": 2,
+        "agent": "deploy_correlation_agent",
+        "action": "NODE B - did scheduler fire + make a PR? get_builds(def=2452, top=3) + find WebCore PR titled 'Archive Site - <yesterday>'. No 2452 run today -> scheduler miss (NODE G1). 2452 failed / no PR -> NODE G2 (read log; DC-branch lookup uses Datadog). 2452 OK + PR exists -> NODE C. (Request creates the PR only; it does NOT queue Configure.)",
+        "tier": 1,
+        "hit_rate": 0.8
+      },
+      {
+        "order": 3,
+        "agent": "deploy_correlation_agent",
+        "action": "NODE C - archive PR health: get_pull_request_by_id(WebCore, <PR>) -> mergeStatus (2=conflicts -> NODE G3; 3=succeeded=HEALTHY -> NODE D). Do NOT call the target 'stale' without NODE E.",
+        "tier": 1,
+        "hit_rate": 0.7
+      },
+      {
+        "order": 4,
+        "agent": "deploy_correlation_agent",
+        "action": "NODE D - walk the chain forward (all unfiltered top-N, match by PR/infraId): Ephemeral-Build 2584 (triggerInfo.pr.number) -> Obtain-Env 2361 (ephPRId, posts InfraId) -> Ephemeral-Deploy 2362 (ephPRId). 2584 FAILED = usual break (stage failed -> CallDeployStage skipped -> 2362/2451 never queued) -> NODE F. 2584 OK but 2362 never ran -> read 2584 timeline for skipped CallDeployStage. 2362 ran but 2451 not queued -> check IS_ARCHIVE_SITE=='true' in 2362 metadata. HIGH-VALUE: diff the chain vs yesterday's WORKING PR; the link present yesterday and absent today is the break.",
+        "tier": 1,
+        "hit_rate": 0.85
+      },
+      {
+        "order": 5,
+        "agent": "deploy_correlation_agent",
+        "action": "NODE F - root-cause the failing leaf: get_build_status(<failing build>) Issues -> failing job; get_build_log_by_id -> verbatim error. Watch for 'BuildRequestValidationFailedException: File /ADOYaml/pipeline-solution-tests.yml not found' = dangling caller/callee (2415 YAML deleted from main, old Deploy branch still calls it).",
+        "tier": 1,
+        "hit_rate": 0.8
+      },
+      {
+        "order": 6,
+        "agent": "datadog_agent",
+        "action": "NODE E - verify current prod deploy branch for self-heal decision: list_traces('env:prod service:acme.example operation_name:aspnet.request', now-1h, now) -> extract NNNNNNN-rc -> get_builds(buildIds=[NNNNNNN]) -> sourceBranch = the Deploy branch. If prod already runs a Deploy branch cut AFTER the offending change merged, it self-heals next scheduled run (no PR needed).",
+        "tier": 1,
+        "hit_rate": 0.6
+      },
+      {
+        "order": 7,
+        "agent": "known_issues_agent",
+        "action": "Search ADO for content-archive / pipeline-chain bugs. Note the 2415-removal PR (108201) is in EphemeralEnv-Yaml, NOT WebCore - confirm the repo before linking.",
+        "tier": 1,
+        "hit_rate": 0.4
+      },
+      {
+        "order": 8,
+        "agent": "codebase_agent",
+        "action": "TIER 2 (if dangling caller/callee suspected): inspect pipeline YAML - pipeline-contentarchive-configure.yml (EphemeralEnv-Yaml), pipeline-ephemeral-build.yml (WebCore), pipeline-solution-tests.yml (EphemeralEnv-Yaml). Confirm a callee YAML deleted from main while an old Deploy branch still references it.",
+        "tier": 2,
+        "hit_rate": 0.6
+      }
+    ],
+    "classification": {
+      "dangling_caller_callee": "YAML deleted from main, old Deploy branch calls it. Recovery: manual Configure 2451 or restore YAML shim. Durable: confirm prod rolls past fix (NODE E) -> self-heals.",
+      "real_test_failure": "CallSolutionTestsJob assertions. Recovery: manual Configure. Durable: fix/mute test.",
+      "scheduler_miss": "No 2452 today. Recovery: run 2452/2451. Durable: re-enable cron/agent.",
+      "infra_pool": "Obtain-Env failed. Recovery: re-run build. Durable: pool health.",
+      "monitor_false_positive": "Configure ran today. Recovery: none. Durable: tune monitor 20000002."
+    },
+    "manual_recovery": "Manual Configure: def 501, branch main (override stored default - may point at a deleted branch). Params: ephPRId=today's PR, archiveSiteDate=PR title date, infraId=from PR 'Ephemeral Status Thread'. Recovers today only; pair with a durable fix.",
+    "last_optimized": null,
+    "incident_count": 0,
+    "skip_rules": []
+  }
+]

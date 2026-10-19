@@ -1,0 +1,1641 @@
+{
+  "_comment": [
+    "IR agent Datadog dashboard, applied by Apply-DatadogConfig.ps1 via",
+    "POST /api/v1/dashboard (create) and PUT /api/v1/dashboard/{id} (update).",
+    "https://docs.datadoghq.com/api/latest/dashboards/",
+    "",
+    "_datadog_id pins the live board this file owns. Two dashboards are named",
+    "for the IR agent (abc-050-def is the dev copy titled 'IR Agent -",
+    "Observability'; yyy-040-zzz is this test board, which the user renamed by",
+    "hand to 'Internal -IR Agent - Observability'), so a title lookup cannot",
+    "identify the right one. Verified live 2026-08-26.",
+    "",
+    "PRESERVED FROM THE USER'S MANUAL EDITS to yyy-040-zzz (read live",
+    "2026-08-26, modified_at 2026-08-26T13:31:20 CDT):",
+    "  - the hand-edited title 'Internal -IR Agent - Observability'",
+    "  - both template variables, in the singular `default` form the live",
+    "    board uses (env=test, ml_app=ir-agent)",
+    "reflow_type is changed from auto to fixed on purpose: fixed is what lets",
+    "each widget carry an explicit x/y/w/h, which is the only way to guarantee",
+    "the header band stays on ONE row directly under the time selector. Same",
+    "mechanism the reference board ghi-060-jkl uses.",
+    "",
+    "LAYOUT reference: https://us5.datadoghq.com/dashboard/ghi-060-jkl",
+    "Matched materially: ordered + fixed reflow, no widget groups, a single",
+    "12-column rollup band at y=0, then full-width tables, then paired",
+    "half-width charts. Its tags and metrics are CodeAgent's and are not copied.",
+    "",
+    "THREE DATA STORES, AND A QUERY AGAINST THE WRONG ONE RETURNS AN EMPTY",
+    "WIDGET RATHER THAN AN ERROR:",
+    "  bifrost.*   env, virtual_key_name. Real billed money. Nothing about",
+    "              incidents or sub-agents.",
+    "  ml_obs.*    env, error, ml_app, model_name, model_provider, service,",
+    "              span_kind (+ source on cost metrics). No per-run, per-tool",
+    "              or per-sub-agent dimension. Cost is NANODOLLARS.",
+    "  APM spans   service, env, operation_name, resource_name and the custom",
+    "              iragent.* tags. NOT ml_app, NOT span_kind, NOT @evaluation.*.",
+    "  ir_agent.*  span-based metrics from spans_metrics_ir_agent.json. Only",
+    "              the tags their own group_by declares, plus env. No ml_app.",
+    "Never mix the terms in one query.",
+    "",
+    "Span tag prefix is lowercase iragent. -- Datadog normalizes span and",
+    "metric tag keys to lowercase",
+    "(https://docs.datadoghq.com/getting_started/tagging/). The @ prefix is",
+    "span-attribute search syntax, not part of the tag key."
+  ],
+  "_datadog_id": "yyy-040-zzz",
+  "title": "Internal -IR Agent - Observability",
+  "description": "Single-agent observability board for the incident response agent: Bifrost billed rollups, per-sub-agent breakdown by time window and by run, and one row per investigation. Managed as JSON at incident_response_agent/observability/datadog/dashboard_ir_agent.json and applied by Apply-DatadogConfig.ps1. No longer Terraform-managed.",
+  "layout_type": "ordered",
+  "reflow_type": "fixed",
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": [],
+      "default": "test"
+    },
+    {
+      "name": "ml_app",
+      "prefix": "ml_app",
+      "available_values": [],
+      "default": "ir-agent"
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "RUNS",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "runs"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "runs",
+                "query": "sum:ml_obs.trace{$env,$ml_app}.as_count()",
+                "aggregator": "sum"
+              }
+            ]
+          }
+        ],
+        "precision": 0
+      },
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "INCIDENTS",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "incidents"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "incidents",
+                "compute": {
+                  "aggregation": "cardinality",
+                  "metric": "@iragent.incident_id"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                }
+              }
+            ]
+          }
+        ],
+        "precision": 0
+      },
+      "layout": {
+        "x": 2,
+        "y": 0,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "TOTAL COST (billed)",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "c"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "c",
+                "query": "sum:bifrost.request.cost.usd{$env,virtual_key_name:incident-response-agent-bfvk}",
+                "aggregator": "sum"
+              }
+            ]
+          }
+        ],
+        "custom_unit": "$",
+        "precision": 2,
+        "autoscale": false
+      },
+      "layout": {
+        "x": 4,
+        "y": 0,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "TOTAL TOKENS (billed)",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "t"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "t",
+                "query": "sum:bifrost.tokens.total{$env,virtual_key_name:incident-response-agent-bfvk}.as_count()",
+                "aggregator": "sum"
+              }
+            ]
+          }
+        ],
+        "precision": 0,
+        "autoscale": true
+      },
+      "layout": {
+        "x": 6,
+        "y": 0,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "TOOL CALLS",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "tools"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "tools",
+                "query": "sum:ml_obs.span{$env,$ml_app,span_kind:tool}.as_count()",
+                "aggregator": "sum"
+              }
+            ]
+          }
+        ],
+        "precision": 0,
+        "autoscale": true
+      },
+      "layout": {
+        "x": 8,
+        "y": 0,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "SPAN ERROR RATE",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "100 * default_zero(err) / all"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "err",
+                "query": "sum:ml_obs.span.error{$env,$ml_app}.as_count()",
+                "aggregator": "sum"
+              },
+              {
+                "data_source": "metrics",
+                "name": "all",
+                "query": "sum:ml_obs.span{$env,$ml_app}.as_count()",
+                "aggregator": "sum"
+              }
+            ]
+          }
+        ],
+        "custom_unit": "%",
+        "precision": 2
+      },
+      "layout": {
+        "x": 10,
+        "y": 0,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "p50 RUN DURATION",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "p50"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "p50",
+                "query": "p50:ml_obs.trace.duration{$env,$ml_app}",
+                "aggregator": "avg"
+              }
+            ]
+          }
+        ],
+        "custom_unit": "s",
+        "precision": 1
+      },
+      "layout": {
+        "x": 0,
+        "y": 2,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "p95 RUN DURATION",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "p95"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "p95",
+                "query": "p95:ml_obs.trace.duration{$env,$ml_app}",
+                "aggregator": "avg"
+              }
+            ]
+          }
+        ],
+        "custom_unit": "s",
+        "precision": 1
+      },
+      "layout": {
+        "x": 2,
+        "y": 2,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "FAILED RUNS",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "default_zero(failed)"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "failed",
+                "query": "sum:ml_obs.trace{$env,$ml_app,error:1}.as_count()",
+                "aggregator": "sum"
+              }
+            ]
+          }
+        ],
+        "precision": 0
+      },
+      "layout": {
+        "x": 4,
+        "y": 2,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "COST PER RUN (billed)",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "cost / incidents"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "cost",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.cost_usd"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                }
+              },
+              {
+                "data_source": "spans",
+                "name": "incidents",
+                "compute": {
+                  "aggregation": "cardinality",
+                  "metric": "@iragent.incident_id"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                }
+              }
+            ]
+          }
+        ],
+        "custom_unit": "$",
+        "precision": 3
+      },
+      "layout": {
+        "x": 6,
+        "y": 2,
+        "width": 2,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_value",
+        "title": "RUNS WITH NO BILLED COST (cost_source:estimate_only)",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "default_zero(est)"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "est",
+                "compute": {
+                  "aggregation": "cardinality",
+                  "metric": "@iragent.incident_id"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:* @iragent.cost_source:estimate_only"
+                }
+              }
+            ]
+          }
+        ],
+        "precision": 0
+      },
+      "layout": {
+        "x": 8,
+        "y": 2,
+        "width": 4,
+        "height": 2
+      }
+    },
+    {
+      "definition": {
+        "type": "query_table",
+        "title": "SUB-AGENTS - selected time window (cost is an ESTIMATE)",
+        "title_size": "16",
+        "title_align": "left",
+        "has_search_bar": "auto",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "alias": "Invocations",
+                "formula": "calls"
+              },
+              {
+                "alias": "Tokens (est)",
+                "formula": "tokens"
+              },
+              {
+                "alias": "Tool calls",
+                "formula": "toolcalls"
+              },
+              {
+                "alias": "Cost USD (ESTIMATE, list price)",
+                "formula": "cost"
+              },
+              {
+                "alias": "Avg duration (s)",
+                "formula": "dur / 1e9"
+              },
+              {
+                "alias": "Errors",
+                "formula": "errs"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "calls",
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "tokens",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.tokens_est"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "toolcalls",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.tool_calls"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "cost",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.cost_usd_est"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "dur",
+                "compute": {
+                  "aggregation": "avg",
+                  "metric": "@duration"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "errs",
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent status:error"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 4,
+        "width": 12,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "query_table",
+        "title": "SUB-AGENTS PER RUN - group by incident, then sub-agent (cost is an ESTIMATE)",
+        "title_size": "16",
+        "title_align": "left",
+        "has_search_bar": "auto",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "alias": "Invocations",
+                "formula": "calls"
+              },
+              {
+                "alias": "Tokens (est)",
+                "formula": "tokens"
+              },
+              {
+                "alias": "Tool calls",
+                "formula": "toolcalls"
+              },
+              {
+                "alias": "Cost USD (ESTIMATE, list price)",
+                "formula": "cost"
+              },
+              {
+                "alias": "Duration (s)",
+                "formula": "dur / 1e9"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "calls",
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 20,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.invocation_id",
+                    "limit": 20
+                  },
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "tokens",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.tokens_est"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 20,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.invocation_id",
+                    "limit": 20
+                  },
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "toolcalls",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.tool_calls"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 20,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.invocation_id",
+                    "limit": 20
+                  },
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "cost",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.cost_usd_est"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 20,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.invocation_id",
+                    "limit": 20
+                  },
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "dur",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@duration"
+                },
+                "search": {
+                  "query": "service:ir-agent $env operation_name:ir.sub_agent @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 20,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd_est",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.invocation_id",
+                    "limit": 20
+                  },
+                  {
+                    "facet": "@iragent.sub_agent",
+                    "limit": 30
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 8,
+        "width": 12,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "THE TWO SUB-AGENT TABLES ABOVE NEED TWO THINGS THE AGENT DOES NOT EMIT YET.\n(1) TOOL CALLS. Verified against app/app_utils/dd_run_plugin.py on branch ado-200004: the ir.sub_agent span carries iragent.{input_tokens_est,output_tokens_est,tokens_est,cost_usd_est} and the iragent.sub_agent tag, and NOTHING ELSE. There is no tool-call counter. The 'Tool calls' column is written against a span metric named iragent.tool_calls on the ir.sub_agent span; if the shipped name differs, fix it HERE rather than substituting another metric. Do NOT fall back to ml_obs.span{span_kind:tool} -- that metric has no sub_agent dimension and would attribute every tool call to every sub-agent.\n(2) RUN IDENTITY ON THE SUB-AGENT SPAN. iragent.incident_id and iragent.invocation_id are tagged on the ROOT span only (dd_run_plugin.py annotate_root_span / persistence.py). Datadog span tags do NOT inherit from parent to child, so the SUB-AGENTS PER RUN table stays empty until both are also tagged on the ir.sub_agent span.",
+        "background_color": "orange",
+        "font_size": "14",
+        "text_align": "left",
+        "vertical_align": "top",
+        "show_tick": false,
+        "has_padding": true
+      },
+      "layout": {
+        "x": 0,
+        "y": 12,
+        "width": 12,
+        "height": 1
+      }
+    },
+    {
+      "definition": {
+        "type": "query_table",
+        "title": "INVESTIGATIONS - one row per run (cost and tokens are BILLED or ABSENT)",
+        "title_size": "16",
+        "title_align": "left",
+        "has_search_bar": "auto",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "alias": "Spans",
+                "formula": "runs"
+              },
+              {
+                "alias": "Tokens (billed)",
+                "formula": "tokens"
+              },
+              {
+                "alias": "Cost USD (billed)",
+                "formula": "cost"
+              },
+              {
+                "alias": "Duration (s)",
+                "formula": "dur / 1e9"
+              },
+              {
+                "alias": "LLM calls",
+                "formula": "llm"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "runs",
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 50,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.category",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.severity",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.alert_source",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.outcome",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.cost_source",
+                    "limit": 50
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "tokens",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.tokens"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 50,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.category",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.severity",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.alert_source",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.outcome",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.cost_source",
+                    "limit": 50
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "cost",
+                "compute": {
+                  "aggregation": "sum",
+                  "metric": "@iragent.cost_usd"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 50,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.category",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.severity",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.alert_source",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.outcome",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.cost_source",
+                    "limit": 50
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "dur",
+                "compute": {
+                  "aggregation": "max",
+                  "metric": "@duration"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 50,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.category",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.severity",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.alert_source",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.outcome",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.cost_source",
+                    "limit": 50
+                  }
+                ]
+              },
+              {
+                "data_source": "spans",
+                "name": "llm",
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:* operation_name:openai.request"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.incident_id",
+                    "limit": 50,
+                    "sort": {
+                      "aggregation": "sum",
+                      "metric": "@iragent.cost_usd",
+                      "order": "desc"
+                    }
+                  },
+                  {
+                    "facet": "@iragent.category",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.severity",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.alert_source",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.outcome",
+                    "limit": 50
+                  },
+                  {
+                    "facet": "@iragent.cost_source",
+                    "limit": 50
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 13,
+        "width": 12,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "toplist",
+        "title": "Run cost source - bifrost (billed) vs estimate_only (ADO-200026)",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "runs"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "runs",
+                "compute": {
+                  "aggregation": "cardinality",
+                  "metric": "@iragent.incident_id"
+                },
+                "search": {
+                  "query": "service:ir-agent $env @iragent.incident_id:*"
+                },
+                "group_by": [
+                  {
+                    "facet": "@iragent.cost_source",
+                    "limit": 10,
+                    "sort": {
+                      "aggregation": "count",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 17,
+        "width": 4,
+        "height": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Spans by span_kind (llm / tool / task / agent / workflow)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "formula": "spans"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "spans",
+                "query": "sum:ml_obs.span{$env,$ml_app} by {span_kind}.as_count()"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 4,
+        "y": 17,
+        "width": 8,
+        "height": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Bifrost BILLED cost over time (USD)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "alias": "billed USD",
+                "formula": "c"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "c",
+                "query": "sum:bifrost.request.cost.usd{$env,virtual_key_name:incident-response-agent-bfvk}"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 20,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Bifrost BILLED tokens over time",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "alias": "billed tokens",
+                "formula": "t"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "t",
+                "query": "sum:bifrost.tokens.total{$env,virtual_key_name:incident-response-agent-bfvk}.as_count()"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 20,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Cost by model (USD, Datadog list price - NOT the Bifrost invoice)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "formula": "cost / 1e9"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "cost",
+                "query": "sum:ml_obs.span.llm.total.cost{$env,$ml_app} by {model_name}"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 24,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Input vs output tokens (model-reported)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "line",
+            "formulas": [
+              {
+                "alias": "input",
+                "formula": "tin"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "tin",
+                "query": "sum:ml_obs.span.llm.input.tokens{$env,$ml_app}.as_count()"
+              }
+            ]
+          },
+          {
+            "response_format": "timeseries",
+            "display_type": "line",
+            "formulas": [
+              {
+                "alias": "output",
+                "formula": "tout"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "tout",
+                "query": "sum:ml_obs.span.llm.output.tokens{$env,$ml_app}.as_count()"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 24,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Cost per sub-agent over time (USD, ESTIMATE - span metric)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "formula": "c"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "c",
+                "query": "sum:ir_agent.sub_agent.cost_usd_est{$env} by {sub_agent}.as_count()"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 28,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Tool calls per sub-agent over time (span metric - needs iragent.tool_calls)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "formula": "tc"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "tc",
+                "query": "sum:ir_agent.sub_agent.tool_calls{$env} by {sub_agent}.as_count()"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 28,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Runs by cost source (bifrost = billed, estimate_only = no billed figure)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "formula": "r"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "r",
+                "query": "count:ir_agent.run.cost_usd_est{$env} by {cost_source}.as_count()"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 32,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Avg cost per run by category (USD, BILLED - blank until ADO-200026)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "line",
+            "formulas": [
+              {
+                "formula": "c"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "c",
+                "query": "avg:ir_agent.run.cost_usd{$env} by {category}"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 32,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Run duration p50 / p95 (s)",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "line",
+            "formulas": [
+              {
+                "alias": "p50",
+                "formula": "p50"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "p50",
+                "query": "p50:ml_obs.trace.duration{$env,$ml_app}"
+              }
+            ]
+          },
+          {
+            "response_format": "timeseries",
+            "display_type": "line",
+            "formulas": [
+              {
+                "alias": "p95",
+                "formula": "p95"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "p95",
+                "query": "p95:ml_obs.trace.duration{$env,$ml_app}"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 36,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "Errors by span_kind",
+        "title_size": "16",
+        "title_align": "left",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "display_type": "bars",
+            "formulas": [
+              {
+                "formula": "errs"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "errs",
+                "query": "sum:ml_obs.span.error{$env,$ml_app} by {span_kind}.as_count()"
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 6,
+        "y": 36,
+        "width": 6,
+        "height": 4
+      }
+    },
+    {
+      "definition": {
+        "type": "toplist",
+        "title": "Top span resources by count (APM spans - tool NAME is not a facet)",
+        "title_size": "16",
+        "title_align": "left",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "formulas": [
+              {
+                "formula": "res"
+              }
+            ],
+            "queries": [
+              {
+                "data_source": "spans",
+                "name": "res",
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:ir-agent $env"
+                },
+                "group_by": [
+                  {
+                    "facet": "resource_name",
+                    "limit": 15,
+                    "sort": {
+                      "aggregation": "count",
+                      "order": "desc"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 40,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "EVALUATIONS ARE NOT AVAILABLE ON THIS BOARD.\n\napp/evaluators/verification_bridge.py submits four trace-scoped labels: ir_diagnosis_quality, ir_investigation_efficiency, ir_evidence_citation_ratio, ir_investigation_reliable.\n\nVerified live 2026-08-26: ml_obs.evaluation returns ZERO series ORG-WIDE, and the APM spans index carries no @evaluation.* facet. There is no query that reaches these scores, so no widget is built for them -- an empty correctness panel reads as 'nothing failed', which is worse than an honest absence.\n\nREQUIRED TO FIX: the agent must emit the evaluations as a custom metric of its own (for example ir.evaluation.score, tagged by label and assessment). Until then the scores are real and readable only in the LLM Observability UI.",
+        "background_color": "gray",
+        "font_size": "14",
+        "text_align": "left",
+        "vertical_align": "top",
+        "show_tick": false,
+        "has_padding": true
+      },
+      "layout": {
+        "x": 6,
+        "y": 40,
+        "width": 6,
+        "height": 3
+      }
+    },
+    {
+      "definition": {
+        "type": "note",
+        "content": "READ BEFORE QUOTING A COST FIGURE.\n\nBILLED means Bifrost. The header TOTAL COST and TOTAL TOKENS come from bifrost.request.cost.usd and bifrost.tokens.total, tagged virtual_key_name:incident-response-agent-bfvk. The tag key is virtual_key_name -- virtual_key exists but is unpopulated (N/A only). Bifrost metrics carry NO incident id and NO sub-agent dimension, which is why every per-run and per-sub-agent number on this board comes from span data instead.\n\nESTIMATE means litellm list price. Every sub-agent cost figure is an estimate and says so in its column header. Bifrost bills per gateway request and cannot split one request across ~15 concurrent sub-agents, so a per-sub-agent billed number does not exist and cannot be made to exist. Billed and estimated will not reconcile, by construction -- ADO-200025 measured them ~15% apart on cost and ~57% apart on tokens over identical traffic. Never sum them together.\n\nRUN TOTALS ARE BILLED OR ABSENT. The litellm fallback for run totals was removed. A run Bifrost could not price has no iragent.cost_usd and no iragent.tokens at all, and its iragent.cost_source reads estimate_only. Check 'RUNS WITH NO BILLED COST' and the 'Run cost source' toplist before trusting a billed total -- those runs contribute nothing to it. ADO-200026 tracks the read-scoped /api/logs credential.\n\nml_obs.span.llm.total.cost is NANODOLLARS and is Datadog's own list-price reckoning, not an invoice. Every widget on it divides by 1e9 and says so.",
+        "background_color": "yellow",
+        "font_size": "14",
+        "text_align": "left",
+        "vertical_align": "top",
+        "show_tick": false,
+        "has_padding": true
+      },
+      "layout": {
+        "x": 0,
+        "y": 43,
+        "width": 12,
+        "height": 2
+      }
+    }
+  ]
+}

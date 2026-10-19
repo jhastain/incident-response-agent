@@ -1,0 +1,475 @@
+<title>Incident Response Agent — Overview</title>
+<style>
+  :root{
+    --ground:#0E1726;
+    --ground-2:#13203400;
+    --panel:#16223A;
+    --panel-2:#1B2A45;
+    --line:#26385C;
+    --text:#E6EDF6;
+    --muted:#8C9CB8;
+    --faint:#5C6E8E;
+    --accent:#34E0D0;
+    --accent-dim:#1E8E86;
+    --sev1:#FF5466;
+    --sev2:#FF9F1C;
+    --sev3:#FFD23F;
+    --sev4:#46D17F;
+    --font-display:"Helvetica Neue",Arial,system-ui,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+    --maxw:1140px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--ground);color:var(--text);
+    font-family:var(--font-body);line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:44px 44px;
+    background-position:center top;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(52,224,208,.10), transparent 60%),
+      radial-gradient(100% 60% at 50% 120%, rgba(14,23,38,.9), var(--ground) 70%);
+  }
+  .wrap{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .eyebrow{
+    font-family:var(--font-mono);font-size:12px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 14px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1,h2,h3{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em;line-height:1.02;margin:0}
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);
+    background:rgba(14,23,38,.82);border-bottom:1px solid var(--line);
+  }
+  .topbar .row{max-width:var(--maxw);margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px;justify-content:space-between}
+  .brand{font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;color:var(--text);display:flex;align-items:center;gap:10px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(52,224,208,.6);animation:beat 2.4s infinite ease-out}
+  @keyframes beat{0%{box-shadow:0 0 0 0 rgba(52,224,208,.55)}70%{box-shadow:0 0 0 9px rgba(52,224,208,0)}100%{box-shadow:0 0 0 0 rgba(52,224,208,0)}}
+  .topnav{display:flex;gap:8px;flex-wrap:wrap}
+  .topnav a{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-decoration:none;padding:6px 10px;border:1px solid transparent;border-radius:6px}
+  .topnav a:hover{color:var(--text);border-color:var(--line)}
+  .topnav a.cta{color:var(--ground);background:var(--accent);font-weight:600}
+  .topnav a.cta:hover{filter:brightness(1.08)}
+
+  /* ---- hero ---- */
+  .hero{padding:84px 0 56px}
+  .hero h1{font-size:clamp(40px,7vw,82px)}
+  .hero h1 .sig{color:var(--accent)}
+  .hero .lede{max-width:620px;color:var(--muted);font-size:18px;margin:22px 0 0}
+  .flowline{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:38px 0 0;font-family:var(--font-mono);font-size:14px}
+  .flowline .node{padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text);white-space:nowrap}
+  .flowline .node b{color:var(--accent);font-weight:700}
+  .flowline .arrow{color:var(--faint);font-size:18px}
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:46px 0 0}
+  .statgrid .cell{background:var(--ground);padding:20px 18px}
+  .statgrid .num{font-family:var(--font-display);font-weight:800;font-size:34px;letter-spacing:-.03em}
+  .statgrid .lab{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+
+  /* ---- section frame ---- */
+  section{padding:64px 0;position:relative;z-index:1}
+  .sec-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:34px}
+  .sec-head h2{font-size:clamp(26px,3.4vw,38px)}
+  .sec-head p{color:var(--muted);margin:8px 0 0;max-width:520px}
+  .secno{font-family:var(--font-mono);color:var(--accent);font-size:13px;letter-spacing:.2em}
+
+  /* ---- pipeline diagram ---- */
+  .pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .stage{
+    position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 16px 18px;
+    transition:border-color .2s,transform .2s;
+  }
+  .stage:hover{border-color:var(--accent-dim);transform:translateY(-2px)}
+  .stage .st-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .stage .st-no{font-family:var(--font-mono);font-size:12px;color:var(--faint)}
+  .stage .st-kind{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted)}
+  .stage .st-kind.par{color:var(--accent);border-color:var(--accent-dim)}
+  .stage .st-kind.cond{color:var(--sev3);border-color:#6a5a1f}
+  .stage h3{font-size:17px;margin-bottom:6px}
+  .stage p{color:var(--muted);font-size:13px;margin:0}
+  .stage .agents{margin-top:12px;display:flex;flex-wrap:wrap;gap:5px}
+  .chip{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);background:var(--ground);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+  .chip.hot{color:var(--accent);border-color:var(--accent-dim)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-top:22px}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .legend i{width:22px;height:0;border-top:2px solid var(--accent);display:inline-block}
+  .legend .b{width:11px;height:11px;border-radius:3px;border:1px solid var(--accent-dim);display:inline-block}
+
+  /* live pulse rail under the pipeline */
+  .rail{margin-top:20px;height:3px;border-radius:3px;background:var(--line);position:relative;overflow:hidden}
+  .rail::after{content:"";position:absolute;top:0;left:-30%;height:100%;width:30%;
+    background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:run 3.2s linear infinite}
+  @keyframes run{to{left:120%}}
+
+  /* ---- flow diagram (topology of agent.py) ---- */
+  .flowdiag{display:flex;flex-direction:column;align-items:center;gap:0;margin:0 0 18px}
+  .fd-io{font-family:var(--font-mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ground);background:var(--accent);padding:9px 18px;border-radius:8px;font-weight:700}
+  .fd-io.out{background:var(--sev3)}
+  .fd-conn{width:2px;height:22px;background:linear-gradient(var(--accent),var(--accent-dim));opacity:.55}
+  .fd-step{font-family:var(--font-mono);font-size:13.5px;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:11px 18px;display:flex;align-items:center;gap:10px;min-width:240px;justify-content:center}
+  .fd-step .fd-n{color:var(--accent);font-weight:700}
+  .fd-fan{position:relative;border:1px solid var(--line);border-radius:12px;background:rgba(27,42,69,.5);padding:28px 16px 16px;width:100%;max-width:580px}
+  .fd-fan.cond{border-style:dashed;border-color:#6a5a1f;background:rgba(255,210,63,.05)}
+  .fd-fan .fd-lab{position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;background:var(--ground);padding:2px 11px;border-radius:6px;border:1px solid var(--line);color:var(--accent);white-space:nowrap}
+  .fd-fan.cond .fd-lab{color:var(--sev3);border-color:#6a5a1f}
+  .fd-leaves{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .fd-leaf{font-family:var(--font-mono);font-size:11.5px;color:var(--muted);background:var(--ground);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+  .fd-fan.cond .fd-leaf{color:var(--sev3)}
+  .fd-sub{font-family:var(--font-mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);text-align:center;margin:30px 0 22px;display:flex;align-items:center;gap:12px;justify-content:center}
+  .fd-sub::before,.fd-sub::after{content:"";height:1px;width:40px;background:var(--line)}
+
+  /* ---- agent / link cards ---- */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px}
+  .card .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .card h3{font-size:20px}
+  .card .meta{font-family:var(--font-mono);font-size:12px;color:var(--faint);word-break:break-all}
+  .btn{align-self:flex-start;font-family:var(--font-mono);font-size:13px;text-decoration:none;color:var(--ground);background:var(--accent);padding:10px 16px;border-radius:8px;font-weight:600}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent-dim)}
+
+  /* ---- demo terminal ---- */
+  .demo{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
+  .term{background:#0A1120;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-family:var(--font-mono);font-size:13px;display:flex;flex-direction:column}
+  .term .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .term .bar i{width:10px;height:10px;border-radius:50%;background:#33425f}
+  .term .bar i.r{background:var(--sev1)}.term .bar i.y{background:var(--sev2)}.term .bar i.g{background:var(--sev4)}
+  .term .bar span{margin-left:8px;color:var(--faint);font-size:11px;letter-spacing:.08em}
+  .term .body{padding:16px;overflow:auto;flex:1}
+  .term .cmd{color:var(--accent)}
+  .term .pr{color:var(--faint)}
+  .term .out{color:var(--text);white-space:pre-wrap}
+  .term .mut{color:var(--muted)}
+  .term .ok{color:var(--sev4)}
+  .term .warn{color:var(--sev2)}
+  .pillrow{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+  .pill{font-family:var(--font-mono);font-size:11px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+  .pill b{color:var(--accent)}
+
+  .report{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;display:flex;flex-direction:column}
+  .report .rhead{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(255,210,63,.06),transparent)}
+  .sevtag{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.08em;padding:5px 9px;border-radius:6px;color:var(--ground);background:var(--sev3)}
+  .report .rhead h3{font-size:16px}
+  .report .rbody{padding:18px;display:flex;flex-direction:column;gap:16px}
+  .rblock .rk{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+  .rblock p,.rblock li{font-size:13.5px;color:var(--text);margin:0}
+  .rblock ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+  .rblock li::marker{color:var(--faint)}
+  .conf{font-family:var(--font-mono);font-size:11px;color:var(--sev2)}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--muted);font-family:var(--font-mono);font-size:12px}
+  footer a{color:var(--accent);text-decoration:none}
+  .note{font-family:var(--font-mono);font-size:11.5px;color:var(--faint);margin-top:10px}
+
+  @media (max-width:880px){
+    .statgrid{grid-template-columns:repeat(2,1fr)}
+    .pipe{grid-template-columns:1fr 1fr}
+    .cards,.demo{grid-template-columns:1fr}
+  }
+  @media (max-width:520px){
+    .pipe{grid-template-columns:1fr}
+    .statgrid{grid-template-columns:1fr 1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .dot,.rail::after{animation:none}
+    html{scroll-behavior:auto}
+  }
+  a:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+
+<div class="topbar">
+  <div class="row">
+    <div class="brand"><span class="dot"></span>AI&nbsp;OPS&nbsp;/&nbsp;incident-response-agent</div>
+    <nav class="topnav">
+      <a href="#workflow">Workflow</a>
+      <a href="#agent">The&nbsp;Agent</a>
+      <a href="#demo">Live&nbsp;Demo</a>
+      <a href="demo-ir-decision-trees.html">Decision&nbsp;Trees</a>
+      <a class="cta" href="https://console.cloud.google.com/vertex-ai/agents/agent-engines/locations/us-central1/agent-engines/1000000000000000002/playground?project=aiops-dev-project" target="_blank" rel="noopener">Open&nbsp;Agent&nbsp;&nearr;</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Autonomous SRE triage &middot; Vertex AI Agent Engine</p>
+    <h1>One alert in.<br>A <span class="sig">team of agents</span> out.<br>One verified report.</h1>
+    <p class="lede">A production alert fires. The Incident Response Agent classifies it, fans out to nine investigators in parallel across GCP, Datadog, Sentry and Azure DevOps, cross-checks the findings, and returns a Teams-ready report with a confidence score — in minutes, with no human in the loop until the recommendation.</p>
+
+    <div class="flowline" aria-label="High level flow">
+      <span class="node">🔔 Alert</span>
+      <span class="arrow">&rarr;</span>
+      <span class="node"><b>9</b> parallel investigators</span>
+      <span class="arrow">&rarr;</span>
+      <span class="node">synthesize &middot; verify</span>
+      <span class="arrow">&rarr;</span>
+      <span class="node">📋 Report</span>
+    </div>
+
+    <div class="statgrid">
+      <div class="cell"><div class="num">8</div><div class="lab">Pipeline stages</div></div>
+      <div class="cell"><div class="num">9&nbsp;+&nbsp;5</div><div class="lab">Tier‑1 ∥ &middot; Tier‑2 on‑call</div></div>
+      <div class="cell"><div class="num">11</div><div class="lab">Alert categories</div></div>
+      <div class="cell"><div class="num">read‑only</div><div class="lab">Never mutates prod</div></div>
+    </div>
+  </header>
+
+  <!-- ============ WORKFLOW ============ -->
+  <section id="workflow">
+    <div class="sec-head">
+      <div>
+        <p class="secno">01 / WORKFLOW</p>
+        <h2>How it finds and triages an incident</h2>
+        <p>A single sequential pipeline. Two stages fan out to run agents in parallel; one stage only wakes specialists when the category calls for them.</p>
+      </div>
+    </div>
+
+    <div class="flowdiag" aria-label="Agent orchestration flow diagram">
+      <div class="fd-io">🔔 Production alert</div>
+      <div class="fd-conn"></div>
+      <div class="fd-step"><span class="fd-n">01</span> alert_classifier</div>
+      <div class="fd-conn"></div>
+
+      <div class="fd-fan">
+        <span class="fd-lab">02 · parallel · context</span>
+        <div class="fd-leaves">
+          <span class="fd-leaf">historical_context</span>
+          <span class="fd-leaf">infra_context</span>
+        </div>
+      </div>
+      <div class="fd-conn"></div>
+
+      <div class="fd-fan">
+        <span class="fd-lab">03 · parallel ×9 · investigate</span>
+        <div class="fd-leaves">
+          <span class="fd-leaf">cloud_run_health</span>
+          <span class="fd-leaf">compute_engine_health</span>
+          <span class="fd-leaf">gcp_logging</span>
+          <span class="fd-leaf">gcp_metrics</span>
+          <span class="fd-leaf">datadog_observability</span>
+          <span class="fd-leaf">sentry_error</span>
+          <span class="fd-leaf">deploy_correlation</span>
+          <span class="fd-leaf">known_issues</span>
+          <span class="fd-leaf">teams_context</span>
+        </div>
+      </div>
+      <div class="fd-conn"></div>
+
+      <div class="fd-step"><span class="fd-n">04</span> synthesis_agent</div>
+      <div class="fd-conn"></div>
+
+      <div class="fd-fan cond">
+        <span class="fd-lab">05 · conditional · tier-2 dispatcher</span>
+        <div class="fd-leaves">
+          <span class="fd-leaf">sql_dba</span>
+          <span class="fd-leaf">codebase</span>
+          <span class="fd-leaf">cache</span>
+          <span class="fd-leaf">auth_security</span>
+          <span class="fd-leaf">pubsub</span>
+        </div>
+      </div>
+      <div class="fd-conn"></div>
+
+      <div class="fd-step"><span class="fd-n">06</span> report_agent</div>
+      <div class="fd-conn"></div>
+      <div class="fd-step"><span class="fd-n">07</span> verification_agent</div>
+      <div class="fd-conn"></div>
+      <div class="fd-step"><span class="fd-n">08</span> persistence_agent</div>
+      <div class="fd-conn"></div>
+      <div class="fd-io out">📋 Verified report → GCS + Firestore</div>
+    </div>
+
+    <div class="fd-sub">stage detail</div>
+
+    <div class="pipe">
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 01</span><span class="st-kind">llm</span></div>
+        <h3>Classify</h3>
+        <p>Reads raw alert text → category, severity, service, GCP project, and the alert timestamp that anchors every downstream query.</p>
+        <div class="agents"><span class="chip hot">alert_classifier</span></div>
+      </div>
+
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 02</span><span class="st-kind par">parallel</span></div>
+        <h3>Load context</h3>
+        <p>Pulls similar past incidents and the affected service's infra map at the same time.</p>
+        <div class="agents"><span class="chip">historical_context</span><span class="chip">infra_context</span></div>
+      </div>
+
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 03</span><span class="st-kind par">parallel ×9</span></div>
+        <h3>Investigate</h3>
+        <p>Nine specialists hit every signal source simultaneously — logs, metrics, deploys, errors, infra health.</p>
+        <div class="agents">
+          <span class="chip">cloud_run_health</span><span class="chip">compute_engine</span>
+          <span class="chip">gcp_logging</span><span class="chip">gcp_metrics</span>
+          <span class="chip">datadog</span><span class="chip">sentry</span>
+          <span class="chip">deploy_correlation</span><span class="chip">known_issues</span>
+          <span class="chip">teams_context</span>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 04</span><span class="st-kind">llm + tools</span></div>
+        <h3>Synthesize</h3>
+        <p>Cross-validates findings across sources, resolves conflicts, and re-queries to close gaps before it commits to a root cause.</p>
+        <div class="agents"><span class="chip hot">synthesis_agent</span></div>
+      </div>
+
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 05</span><span class="st-kind cond">conditional</span></div>
+        <h3>Dispatch specialists</h3>
+        <p>Only if the category needs depth — routes to SQL DBA, codebase, cache, auth, or Pub/Sub experts.</p>
+        <div class="agents">
+          <span class="chip">sql_dba</span><span class="chip">codebase</span><span class="chip">cache</span>
+          <span class="chip">auth_security</span><span class="chip">pubsub</span>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 06</span><span class="st-kind">llm</span></div>
+        <h3>Report</h3>
+        <p>Assembles a six-section, Teams-ready markdown report. Recommends only state-changing actions — read-only work is already done.</p>
+        <div class="agents"><span class="chip hot">report_agent</span></div>
+      </div>
+
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 07</span><span class="st-kind">independent</span></div>
+        <h3>Verify</h3>
+        <p>A separate scorer grades diagnosis, solution and efficiency, then sets a confidence tier — never HIGH without a human.</p>
+        <div class="agents"><span class="chip hot">verification_agent</span></div>
+      </div>
+
+      <div class="stage">
+        <div class="st-top"><span class="st-no">STAGE 08</span><span class="st-kind">write</span></div>
+        <h3>Persist</h3>
+        <p>Dual-writes the incident to GCS and Firestore so the next investigation can learn from this one.</p>
+        <div class="agents"><span class="chip">persistence_agent</span></div>
+      </div>
+    </div>
+
+    <div class="rail" aria-hidden="true"></div>
+    <div class="legend">
+      <span><i></i> sequential signal flow</span>
+      <span><span class="b"></span> parallel fan-out (run at once)</span>
+      <span>category-gated specialists wake on demand</span>
+    </div>
+  </section>
+
+  <!-- ============ THE AGENT ============ -->
+  <section id="agent">
+    <div class="sec-head">
+      <div>
+        <p class="secno">02 / DEPLOYMENT</p>
+        <h2>The agent itself</h2>
+        <p>Deployed to Vertex AI Agent Engine — managed runtime, persistent sessions, no containers to babysit.</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <span class="k">Live · open in console</span>
+        <h3>Agent Engine Playground</h3>
+        <p style="color:var(--muted);margin:0;font-size:14px">Talk to the deployed agent directly. Paste an alert, watch the pipeline run.</p>
+        <a class="btn" href="https://console.cloud.google.com/vertex-ai/agents/agent-engines/locations/us-central1/agent-engines/1000000000000000002/playground?project=aiops-dev-project" target="_blank" rel="noopener">Open playground &nearr;</a>
+        <div class="meta">aiops-dev-project · us-central1 · engine 1000000000000000002</div>
+      </div>
+      <div class="card">
+        <span class="k">Source · resource</span>
+        <h3>Engine &amp; repo</h3>
+        <p style="color:var(--muted);margin:0;font-size:14px">Reasoning Engine resource and the repository that builds it.</p>
+        <a class="btn ghost" href="https://dev.azure.com/acme/Infrastructure/_git/incident-response-agent" target="_blank" rel="noopener">incident-response-agent repo &nearr;</a>
+        <div class="meta">projects/000000000002/locations/us-central1/reasoningEngines/1000000000000000002</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LIVE DEMO ============ -->
+  <section id="demo">
+    <div class="sec-head">
+      <div>
+        <p class="secno">03 / LIVE DEMO</p>
+        <h2>We fed it a real alert</h2>
+        <p>PagerDuty #1001 — "Ephemeral PR environments critically low: 0 remaining." One command, full investigation, real findings.</p>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="term" aria-label="investigate skill terminal">
+        <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span>investigate &mdash; the skill</span></div>
+        <div class="body">
+<div class="cmd">&gt; /investigate</div>
+<div class="out mut">  PagerDuty #1001 (RESOLVED)
+  Available ephemeral PR environments
+  critically low: 0 remaining (threshold 3)
+  Service: Ephemeral Environment Availability</div>
+<div class="pr">
+─ creating session …               <span class="ok">ok</span>
+─ streaming pipeline …</div>
+<div class="out"><span class="mut">  01</span> classify        <span class="ok">cloud-infrastructure · sev3</span>
+<span class="mut">  02</span> context ∥       <span class="ok">2 agents</span>
+<span class="mut">  03</span> investigate ∥   <span class="ok">9 agents · ~60 tool calls</span>
+<span class="mut">  04</span> synthesize      <span class="ok">cross-validated</span>
+<span class="mut">  05</span> dispatch        <span class="mut">skipped (tier-1 sufficient)</span>
+<span class="mut">  06</span> report          <span class="ok">generated</span>
+<span class="mut">  07</span> verify          <span class="warn">tier: MEDIUM</span>
+<span class="mut">  08</span> persist         <span class="ok">GCS + Firestore</span></div>
+<div class="pr">─ done · 14 agents · ~10 min</div>
+        </div>
+      </div>
+
+      <div class="report" aria-label="generated report">
+        <div class="rhead">
+          <span class="sevtag">SEV3 · RESOLVED</span>
+          <h3>Ephemeral PR Pool Exhausted (0/3)</h3>
+        </div>
+        <div class="rbody">
+          <div class="rblock">
+            <div class="rk">Root cause <span class="conf">· moderate evidence</span></div>
+            <p>Normal concurrent demand hit the hard pool ceiling of 3, compounded by two slots held by 7-day-old PRs — one stale draft, one abandoned at alert time.</p>
+          </div>
+          <div class="rblock">
+            <div class="rk">Key findings — evidence-backed</div>
+            <ul>
+              <li>All 3 slots occupied: PR 105036 (draft, 7d), PR 105040 (abandoned), PR 105460 (~17h)</li>
+              <li>PR 105040 released its slot 94s after the alert — confirmed via ADO PR API</li>
+              <li>Cross-checked against Datadog build events + infra pool docs</li>
+            </ul>
+          </div>
+          <div class="rblock">
+            <div class="rk">Recommended actions — human decision</div>
+            <ul>
+              <li>Expand pool ceiling 3 → 5+</li>
+              <li>Auto-reclaim draft PRs at the 7-day TTL</li>
+              <li>Add retry/alerting on cleanup-pipeline failures</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pillrow" style="margin-top:18px">
+      <span class="pill"><b>read-only</b> · investigates, never changes prod</span>
+      <span class="pill">timestamp-anchored queries catch transient alerts</span>
+      <span class="pill">honest: labels confidence, never fabricates</span>
+      <span class="pill">every run persisted for the next one</span>
+    </div>
+    <p class="note">Demo path: open the playground above → paste the alert → narrate stages 01–08 as they stream. The report panel here mirrors the real output.</p>
+  </section>
+
+  <footer>
+    <div>AI OPS · incident-response-agent &nbsp;·&nbsp; built on Google ADK + Vertex AI Agent Engine</div>
+    <div style="margin-top:8px">Vertex AI Agent Engine · aiops-dev-project · us-central1 · engine 1000000000000000002</div>
+  </footer>
+
+</div>

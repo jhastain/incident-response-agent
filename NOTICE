@@ -1,0 +1,19 @@
+This project is MIT licensed (see LICENSE), with one exception.
+
+Files generated from Google's Agent Development Kit project starter retain
+their original Apache License 2.0 header:
+
+  Dockerfile
+  app/fast_api_app.py
+  app/app_utils/a2a.py
+  app/app_utils/reasoning_engine_adapter.py
+  app/app_utils/services.py
+  app/app_utils/telemetry.py
+  app/app_utils/typing.py
+  tests/integration/test_agent.py
+  tests/unit/test_dummy.py
+
+Copyright 2026 Google LLC, licensed under the Apache License, Version 2.0:
+http://www.apache.org/licenses/LICENSE-2.0
+
+Everything else is Copyright 2026 Jason Hastain under the MIT License.

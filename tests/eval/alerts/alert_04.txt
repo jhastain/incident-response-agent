@@ -1,0 +1,11 @@
+[Datadog Monitor] CoreSvc PROD - gRPC DeadlineExceeded on orderitems
+
+Monitor: CoreSvc PROD orderitems error rate
+Triggered: 2026-09-14T16:20:00Z
+Service: coresvc-prod-run-api-us-c1  (project acme-production-100000)
+
+DeadlineExceeded on grpc call CoreSvc.LineItems/Update, 31% of calls in the
+last 10 minutes. Upstream HttpUnhandledException surfacing at
+PUT /v2/orderitems/update-amendment-order-item.
+
+p99 latency 9.8s (baseline 240ms). No deploy in the window.

@@ -1,0 +1,169 @@
+{
+  "_comment": [
+    "IR agent Datadog monitors, applied by Apply-DatadogConfig.ps1.",
+    "API: https://docs.datadoghq.com/api/latest/monitors/",
+    "  create POST /api/v1/monitor",
+    "  read   GET  /api/v1/monitor/{monitor_id}",
+    "  list   GET  /api/v1/monitor?name=<substring>",
+    "  update PUT  /api/v1/monitor/{monitor_id}",
+    "Required create fields per the v1 OpenAPI spec (schema Monitor): type and",
+    "query. name, message, tags and options are optional but all set here.",
+    "",
+    "IDENTITY. Monitor names are NOT unique in this org -- dev and test both",
+    "carry a monitor called 'IR Agent - Error rate climbing' and so on. Verified",
+    "live 2026-08-26 via GET /api/v1/monitor: the dev copies are 21577973-",
+    "21577978 (ml_app:ir-agent, env:dev) and the test copies are 21633848-",
+    "21633852 (ml_app:ir-agent, env:test). The _datadog_id below pins",
+    "each entry to its TEST monitor. The apply script matches on that id first",
+    "and falls back to an exact name+query match; an ambiguous fallback is a",
+    "refusal, never a guess.",
+    "",
+    "PLACEHOLDER THRESHOLDS. Four of the five monitors below carry a message",
+    "beginning 'PLACEHOLDER THRESHOLD -- ...'. None of those numeric thresholds",
+    "are tuned from real incident data; they exist so the monitors are wired now",
+    "and get real numbers later. No @-notification handles are set -- routing is",
+    "a separate decision. Do NOT invent replacement thresholds here.",
+    "",
+    "ASCII NOTE. The live monitors carry an em-dash after 'PLACEHOLDER",
+    "THRESHOLD'. These JSON files are ASCII-only (non-ASCII punctuation parses",
+    "as ANSI under Windows PowerShell 5.1 and breaks string terminators), so the",
+    "em-dash is written as '--'. Applying this file therefore rewrites the",
+    "message text on the five live monitors -- the only content change from the",
+    "Terraform originals.",
+    "",
+    "COST MONITOR UNITS. ml_obs.span.llm.total.cost is NANODOLLARS. The",
+    "5,000,000,000 threshold is $5.00/day, not $5,000,000,000/day.",
+    "",
+    "TYPE NORMALIZATION. Datadog stores some 'metric alert' submissions as",
+    "'query alert' and reports the stored type back -- verified live 2026-08-26",
+    "on 21633848 and 21633850, which Terraform declared as 'metric alert' and",
+    "the API returns as 'query alert'. They are the same monitor. The apply",
+    "script treats live 'query alert' as satisfying a desired 'metric alert' so",
+    "this does not read as drift on every run.",
+    "",
+    "OPTIONS ARE COMPARED AS A SUBSET. Datadog adds its own defaults",
+    "(include_tags, new_host_delay, notify_audit, require_full_window, silenced).",
+    "The apply script checks only that the options declared here are present with",
+    "these values; it does not try to strip Datadog's defaults. A PUT carrying",
+    "only these keys leaves the rest at their defaults."
+  ],
+  "monitors": [
+    {
+      "_key": "ir_agent_error_rate",
+      "_datadog_id": 21633852,
+      "name": "IR Agent - Error rate climbing",
+      "type": "metric alert",
+      "message": "PLACEHOLDER THRESHOLD -- set before the September correctness criteria land; revisit. IR agent span error rate has climbed above the placeholder threshold over the last hour.",
+      "query": "sum(last_1h):sum:ml_obs.span.error{env:test,ml_app:ir-agent}.as_count() / sum:ml_obs.span{env:test,ml_app:ir-agent}.as_count() > 0.1",
+      "options": {
+        "thresholds": { "warning": 0.05, "critical": 0.1 },
+        "notify_no_data": false,
+        "renotify_interval": 60
+      },
+      "tags": ["team:aiops", "agent:ir-agent", "managed-by:apply-datadogconfig"]
+    },
+    {
+      "_key": "ir_agent_latency_regression",
+      "_datadog_id": 21633849,
+      "name": "IR Agent - p95 latency regression",
+      "type": "metric alert",
+      "message": "PLACEHOLDER THRESHOLD -- set before the September correctness criteria land; revisit. IR agent trace p95 duration has exceeded the placeholder threshold over the last hour.",
+      "query": "avg(last_1h):p95:ml_obs.trace.duration{env:test,ml_app:ir-agent} > 300",
+      "options": {
+        "thresholds": { "warning": 180, "critical": 300 },
+        "notify_no_data": false,
+        "renotify_interval": 60
+      },
+      "tags": ["team:aiops", "agent:ir-agent", "managed-by:apply-datadogconfig"]
+    },
+    {
+      "_key": "ir_agent_daily_spend",
+      "_datadog_id": 21633848,
+      "_note": "Nanodollars. 5,000,000,000 ns = $5.00/day. The figure is a deliberately round, generous placeholder chosen to avoid false positives while the agent has no stable daily spend baseline -- NOT a computed multiple of any observed figure.",
+      "name": "IR Agent - Daily spend breach",
+      "type": "metric alert",
+      "message": "PLACEHOLDER THRESHOLD -- set before the September correctness criteria land; revisit. IR agent daily LLM cost has exceeded the placeholder threshold. NOTE: ml_obs.span.llm.total.cost is in NANODOLLARS -- this threshold (5,000,000,000) is $5.00/day, not $5,000,000,000/day. Divide by 1e9 when reading the triggering value.",
+      "query": "sum(last_1d):sum:ml_obs.span.llm.total.cost{env:test,ml_app:ir-agent} > 5000000000",
+      "_options_note": "renotify_interval is deliberately OMITTED, not set to 0. Datadog treats 0 as 'never renotify' and drops the key from the stored monitor entirely -- verified live 2026-08-26 on this monitor, whose options come back with no renotify_interval at all. Declaring 0 here would make the apply script report drift on every single run and never reach NO CHANGE.",
+      "options": {
+        "thresholds": { "critical": 5000000000 },
+        "notify_no_data": false
+      },
+      "tags": ["team:aiops", "agent:ir-agent", "managed-by:apply-datadogconfig"]
+    },
+    {
+      "_key": "ir_agent_token_spike",
+      "_datadog_id": 21633851,
+      "_note": "The ONLY threshold here derived from measured traffic, not guessed. Observed peak hourly token usage was 2,334,088 (consistent across a 2-day and a 7-day window, queried 2026-08-03); 2,450,792 is that peak +5%. The original 500,000 placeholder fired immediately on normal traffic. Re-derive the same way once real prod volume exists rather than scaling by intuition. The message keeps the PLACEHOLDER prefix as it stands live.",
+      "name": "IR Agent - Token spike",
+      "type": "metric alert",
+      "message": "PLACEHOLDER THRESHOLD -- set before the September correctness criteria land; revisit. IR agent hourly token usage has exceeded 2,450,792 (observed peak 2,334,088 +5%, measured 2026-08-03). Either traffic genuinely grew or a prompt regression is inflating context -- check the per-model token widget on the IR Agent - Observability dashboard first.",
+      "query": "sum(last_1h):sum:ml_obs.span.llm.total.tokens{env:test,ml_app:ir-agent}.as_count() > 2450792",
+      "options": {
+        "thresholds": { "critical": 2450792 },
+        "notify_no_data": false,
+        "renotify_interval": 60
+      },
+      "tags": ["team:aiops", "agent:ir-agent", "managed-by:apply-datadogconfig"]
+    },
+    {
+      "_key": "ir_agent_volume_drop_to_zero",
+      "_datadog_id": 21633850,
+      "name": "IR Agent - Span volume dropped to zero",
+      "type": "metric alert",
+      "message": "PLACEHOLDER THRESHOLD -- set before the September correctness criteria land; revisit. IR agent has emitted zero spans over the last 24 hours -- the agent may be down, undeployed, or Datadog ingestion may be broken.",
+      "query": "sum(last_24h):sum:ml_obs.span{env:test,ml_app:ir-agent}.as_count() < 1",
+      "_options_note": "renotify_interval omitted, not 0 -- see the note on ir_agent_daily_spend.",
+      "options": {
+        "thresholds": { "critical": 1 },
+        "notify_no_data": true,
+        "no_data_timeframe": 1440
+      },
+      "tags": ["team:aiops", "agent:ir-agent", "managed-by:apply-datadogconfig"]
+    }
+  ],
+  "disabled_monitors": [
+    {
+      "_key": "ir_agent_evaluation_pass_rate",
+      "_disabled_reason": [
+        "NOT APPLIED. Carried forward verbatim from the Terraform unit so the",
+        "intent is not lost. See ADO-200009.",
+        "",
+        "Datadog's duplicate-monitor check compares only the top-level `query`",
+        "string. For a trace-analytics alert the environment scope lives in the",
+        "nested event_query search blocks, not in the outer formula, so this",
+        "monitor's outer query is byte-identical between dev and test even",
+        "though the two are correctly scoped to different environments. The API",
+        "therefore rejects the test copy as a duplicate of the dev one",
+        "(monitor 21577978, which exists and is in No Data -- verified live",
+        "2026-08-26), with 'Duplicate of an existing monitor_id'.",
+        "",
+        "Under Terragrunt this single monitor blocked every downstream GCP",
+        "module in the environment, which is why it was dropped. Under the",
+        "apply script the blast radius is smaller, but the API rejection is",
+        "unchanged, so it stays out.",
+        "",
+        "SECOND, INDEPENDENT BLOCKER (verified live 2026-08-26): the underlying",
+        "data does not exist. ml_obs.evaluation returns ZERO series org-wide and",
+        "the APM spans index carries no @evaluation.* facet, so even if the",
+        "duplicate check passed this monitor would evaluate 0/0 forever. Both",
+        "problems must be solved before re-enabling: emit the evaluations as a",
+        "custom metric, and give the outer query an env-distinguishing term.",
+        "",
+        "The live Datadog API caps a trace-analytics alert's evaluation window",
+        "at 48h -- last('7d') and last('168h') are both rejected ('unit d must",
+        "have value between 1 and 2' / 'unit h must have value between 1 and",
+        "48'), confirmed empirically via terragrunt plan. Hence last('48h')."
+      ],
+      "name": "IR Agent - Evaluation pass rate",
+      "type": "trace-analytics alert",
+      "message": "PLACEHOLDER THRESHOLD -- set before the September correctness criteria land; revisit. IR agent's ir_investigation_reliable evaluation pass rate has dropped below the placeholder threshold over a 48-hour window (the API caps this monitor type's evaluation window at 48h; evaluation results are span attributes, not ml_obs.* metrics, so this is a query monitor, not a metric monitor).",
+      "query": "formula(\"100 * pass / total\").last(\"48h\") < 80",
+      "options": {
+        "thresholds": { "critical": 80 },
+        "notify_no_data": false
+      },
+      "tags": ["team:aiops", "agent:ir-agent", "managed-by:apply-datadogconfig"]
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "_comment": [
+    "IR agent span-based metrics, applied by Apply-DatadogConfig.ps1.",
+    "API: https://docs.datadoghq.com/api/latest/spans-metrics/",
+    "  create  POST  /api/v2/apm/config/metrics",
+    "  read    GET   /api/v2/apm/config/metrics/{metric_id}",
+    "  update  PATCH /api/v2/apm/config/metrics/{metric_id}",
+    "The metric_id IS the metric name. Create sends data.id + data.type +",
+    "data.attributes; update sends data.type + data.attributes only (no id --",
+    "it is in the URL, and the name is immutable).",
+    "",
+    "PATCH IS NARROWER THAN POST. Verified against the Datadog v2 OpenAPI spec",
+    "(https://docs.datadoghq.com/resources/json/full_spec_v2.json, schema",
+    "SpansMetricUpdateAttributes): an update accepts ONLY",
+    "compute.include_percentiles, filter and group_by. aggregation_type and",
+    "compute.path are NOT updatable -- changing either means deleting the metric",
+    "and recreating it. The apply script detects that case and refuses rather",
+    "than sending a PATCH that would silently no-op.",
+    "",
+    "WHY THIS UNIT EXISTS. app/app_utils/dd_run_plugin.py opens one ir.sub_agent",
+    "APM span per sub-agent and stamps that sub-agent's tokens and cost onto it.",
+    "Those are plain APM spans with no LLM Obs span_kind, so ddtrace's",
+    "LLMObsProcessor skips them and they contribute nothing to ml_obs.span*.",
+    "Making them LLM Obs spans would not help either: the only tags on ml_obs.*",
+    "metrics are env, error, ml_app, model_name, model_provider, service,",
+    "span_kind and version, so a sub-agent NAME could never reach a metric",
+    "group-by that way. Span-based metrics are the path that works -- Datadog",
+    "computes them from spans ingested by APM regardless of retention filters",
+    "(https://docs.datadoghq.com/tracing/trace_pipeline/generate_metrics/), and",
+    "each metric names its own group_by tags.",
+    "",
+    "DELIBERATELY NOT PER-ENVIRONMENT. A span-based metric is org-level config",
+    "keyed by metric NAME, so a dev copy and a test copy of the same name are",
+    "two definitions fighting over one Datadog object. These carry NO env filter",
+    "and expose env as a group_by tag instead; every environment's spans feed the",
+    "same metric and each dashboard scopes with its own $env template variable.",
+    "",
+    "NAMING RULE ON THE SPANS: _est means ESTIMATED, no suffix means BILLED.",
+    "  iragent.{cost_usd,tokens,input_tokens,output_tokens}_est -- litellm list",
+    "    price and model-reported counts. Every per-sub-agent number is one of",
+    "    these; the root span carries them as the run estimate.",
+    "  iragent.{cost_usd,tokens} -- root span only, Bifrost BILLED figures.",
+    "    ABSENT when Bifrost could not answer, never backfilled, so these two are",
+    "    safe to sum without a group_by. iragent.cost_source records which a run",
+    "    produced (bifrost / estimate_only).",
+    "Never add a billed series to an estimated one: ADO-200025 measured them ~15",
+    "percent apart on cost and ~57 percent apart on tokens over identical traffic.",
+    "",
+    "Cardinality is bounded: the root SequentialAgent has ~15 named children, so",
+    "sub_agent is a small tag, not an unbounded id. Note what is deliberately",
+    "NOT a group_by here: incident_id and invocation_id are unbounded, and a",
+    "custom metric is billed per distinct combination of name and tag values.",
+    "The dashboard's per-run sub-agent table reads those from the SPAN index",
+    "instead, where a tag costs nothing.",
+    "",
+    "ir_agent.sub_agent.tool_calls is PROVISIONAL -- the span field it reads does",
+    "not exist yet. See its own _note below before applying it.",
+    "",
+    "Tag prefix is lowercase iragent. -- Datadog normalizes span and metric tag",
+    "keys to lowercase (https://docs.datadoghq.com/getting_started/tagging/)."
+  ],
+  "metrics": [
+    {
+      "_note": "Named _est to match the span field. litellm list price, not the invoice.",
+      "id": "ir_agent.sub_agent.cost_usd_est",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.cost_usd_est"
+        },
+        "filter": {
+          "query": "@iragent.sub_agent:*"
+        },
+        "group_by": [
+          { "path": "@iragent.sub_agent", "tag_name": "sub_agent" },
+          { "path": "env", "tag_name": "env" }
+        ]
+      }
+    },
+    {
+      "id": "ir_agent.sub_agent.tokens_est",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.tokens_est"
+        },
+        "filter": {
+          "query": "@iragent.sub_agent:*"
+        },
+        "group_by": [
+          { "path": "@iragent.sub_agent", "tag_name": "sub_agent" },
+          { "path": "env", "tag_name": "env" }
+        ]
+      }
+    },
+    {
+      "id": "ir_agent.sub_agent.input_tokens_est",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.input_tokens_est"
+        },
+        "filter": {
+          "query": "@iragent.sub_agent:*"
+        },
+        "group_by": [
+          { "path": "@iragent.sub_agent", "tag_name": "sub_agent" },
+          { "path": "env", "tag_name": "env" }
+        ]
+      }
+    },
+    {
+      "id": "ir_agent.sub_agent.output_tokens_est",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.output_tokens_est"
+        },
+        "filter": {
+          "query": "@iragent.sub_agent:*"
+        },
+        "group_by": [
+          { "path": "@iragent.sub_agent", "tag_name": "sub_agent" },
+          { "path": "env", "tag_name": "env" }
+        ]
+      }
+    },
+    {
+      "_note": "PROVISIONAL -- THE SPAN FIELD DOES NOT EXIST YET. Verified against app/app_utils/dd_run_plugin.py on branch ado-200004: the ir.sub_agent span carries iragent.{input_tokens_est,output_tokens_est,tokens_est,cost_usd_est} plus the iragent.sub_agent tag, and no tool-call counter of any kind. Another agent is adding one. This metric is written against the name iragent.tool_calls; if the shipped field name differs, fix compute.path HERE rather than substituting a different source. Do NOT derive per-sub-agent tool calls from ml_obs.span{span_kind:tool} -- that metric has no sub_agent dimension and would attribute every tool call to every sub-agent. Applying this before the field ships creates a metric that reports nothing, which is harmless; applying it against the WRONG field silently reports the wrong number, which is not.",
+      "id": "ir_agent.sub_agent.tool_calls",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.tool_calls"
+        },
+        "filter": {
+          "query": "@iragent.sub_agent:*"
+        },
+        "group_by": [
+          { "path": "@iragent.sub_agent", "tag_name": "sub_agent" },
+          { "path": "env", "tag_name": "env" }
+        ]
+      }
+    },
+    {
+      "_note": "Run-level rollup, BILLED ONLY. A run Bifrost could not price contributes NO point rather than a list-price one, so the series is safe to sum without grouping. cost_source stays a group_by so the billed/estimate_only split is visible. The root span is the only one carrying @iragent.outcome (dd_tags._ALWAYS_TAGGED), which is what separates it from the sub-agent spans.",
+      "id": "ir_agent.run.cost_usd",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.cost_usd"
+        },
+        "filter": {
+          "query": "@iragent.outcome:*"
+        },
+        "group_by": [
+          { "path": "env", "tag_name": "env" },
+          { "path": "@iragent.category", "tag_name": "category" },
+          { "path": "@iragent.cost_source", "tag_name": "cost_source" }
+        ]
+      }
+    },
+    {
+      "id": "ir_agent.run.cost_usd_est",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.cost_usd_est"
+        },
+        "filter": {
+          "query": "@iragent.outcome:*"
+        },
+        "group_by": [
+          { "path": "env", "tag_name": "env" },
+          { "path": "@iragent.cost_source", "tag_name": "cost_source" }
+        ]
+      }
+    },
+    {
+      "id": "ir_agent.run.tokens_est",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.tokens_est"
+        },
+        "filter": {
+          "query": "@iragent.outcome:*"
+        },
+        "group_by": [
+          { "path": "env", "tag_name": "env" },
+          { "path": "@iragent.cost_source", "tag_name": "cost_source" }
+        ]
+      }
+    },
+    {
+      "_note": "Billed-only, like ir_agent.run.cost_usd. ir_agent.run.tokens_est is the estimated counterpart, populated on every run.",
+      "id": "ir_agent.run.tokens",
+      "attributes": {
+        "compute": {
+          "aggregation_type": "distribution",
+          "include_percentiles": false,
+          "path": "@iragent.tokens"
+        },
+        "filter": {
+          "query": "@iragent.outcome:*"
+        },
+        "group_by": [
+          { "path": "env", "tag_name": "env" },
+          { "path": "@iragent.category", "tag_name": "category" }
+        ]
+      }
+    }
+  ]
+}

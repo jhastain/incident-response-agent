@@ -1,0 +1,358 @@
+<title>Incident Response Agent — Decision Trees</title>
+<style>
+  :root{
+    --ground:#0E1726;--panel:#16223A;--panel-2:#1B2A45;--line:#26385C;
+    --text:#E6EDF6;--muted:#8C9CB8;--faint:#5C6E8E;
+    --accent:#34E0D0;--accent-dim:#1E8E86;
+    --sev1:#FF5466;--sev2:#FF9F1C;--sev3:#FFD23F;--sev4:#46D17F;
+    --font-display:"Helvetica Neue",Arial,system-ui,sans-serif;
+    --font-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+    --maxw:1140px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--ground);color:var(--text);font-family:var(--font-body);line-height:1.55;-webkit-font-smoothing:antialiased;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:44px 44px;background-position:center top;}
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(120% 80% at 50% -10%, rgba(52,224,208,.10), transparent 60%),radial-gradient(100% 60% at 50% 120%, rgba(14,23,38,.9), var(--ground) 70%);}
+  .wrap{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--accent);display:inline-block}
+  h1,h2,h3{font-family:var(--font-display);font-weight:800;letter-spacing:-.02em;line-height:1.04;margin:0}
+
+  .topbar{position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);background:rgba(14,23,38,.82);border-bottom:1px solid var(--line)}
+  .topbar .row{max-width:var(--maxw);margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px;justify-content:space-between}
+  .brand{font-family:var(--font-mono);font-size:13px;letter-spacing:.08em;display:flex;align-items:center;gap:10px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+  .topnav{display:flex;gap:8px;flex-wrap:wrap}
+  .topnav a{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-decoration:none;padding:6px 10px;border:1px solid transparent;border-radius:6px}
+  .topnav a:hover{color:var(--text);border-color:var(--line)}
+  .topnav a.cta{color:var(--ground);background:var(--accent);font-weight:600}
+
+  .hero{padding:80px 0 44px}
+  .hero h1{font-size:clamp(38px,6.2vw,74px)}
+  .hero h1 .sig{color:var(--accent)}
+  .hero .lede{max-width:660px;color:var(--muted);font-size:18px;margin:22px 0 0}
+
+  section{padding:58px 0;position:relative;z-index:1}
+  .sec-head{margin-bottom:30px}
+  .sec-head h2{font-size:clamp(26px,3.4vw,38px)}
+  .sec-head p{color:var(--muted);margin:8px 0 0;max-width:620px}
+  .secno{font-family:var(--font-mono);color:var(--accent);font-size:13px;letter-spacing:.2em}
+
+  /* ---- two-decision diagram ---- */
+  .decide{display:flex;align-items:stretch;gap:14px;flex-wrap:wrap}
+  .dnode{flex:1;min-width:210px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .dnode .dk{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+  .dnode h3{font-size:18px;margin-bottom:7px}
+  .dnode p{margin:0;font-size:13.5px;color:var(--muted)}
+  .dnode .tag{display:inline-block;margin-top:11px;font-family:var(--font-mono);font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+  .darrow{display:flex;align-items:center;color:var(--faint);font-size:22px;font-family:var(--font-mono)}
+
+  /* ---- routing matrix ---- */
+  .matrix{width:100%;border-collapse:collapse;font-size:13.5px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .matrix thead th{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:13px 14px;background:var(--panel-2);border-bottom:1px solid var(--line);font-weight:600}
+  .matrix td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  .matrix tbody tr:last-child td{border-bottom:none}
+  .matrix tbody tr{background:var(--panel)}
+  .matrix tbody tr:nth-child(even){background:rgba(19,32,52,.55)}
+  .matrix tbody tr:hover{background:var(--panel-2)}
+  .cat{font-family:var(--font-mono);font-weight:600;color:var(--text)}
+  .freq{font-family:var(--font-mono);color:var(--faint);font-size:12px}
+  .firstm{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+  .route{display:flex;flex-wrap:wrap;gap:6px}
+  .spec{font-family:var(--font-mono);font-size:11px;color:var(--sev3);background:rgba(255,210,63,.08);border:1px solid #6a5a1f;border-radius:6px;padding:3px 8px}
+  .t1ok{font-family:var(--font-mono);font-size:11px;color:var(--sev4);border:1px solid var(--accent-dim);border-radius:6px;padding:3px 8px;background:rgba(70,209,127,.07)}
+  .mwrap{overflow-x:auto}
+  .mlegend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-top:16px}
+  .mlegend span{display:flex;align-items:center;gap:7px}
+
+  /* ---- triage tree (one category, expanded) ---- */
+  .treebox{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start}
+  .ladder{background:#0A1120;border:1px solid var(--line);border-radius:12px;padding:18px 20px;font-family:var(--font-mono);font-size:13px}
+  .ladder .lt{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+  .step{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+  .step:last-child{border-bottom:none}
+  .step .so{color:var(--faint);width:22px;flex:none}
+  .step .sa{color:var(--text);flex:1}
+  .step .stier{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:2px 6px}
+  .step .stier.t2{color:var(--sev3);border-color:#6a5a1f}
+  .step .shit{color:var(--accent-dim);font-size:11px}
+  .loop{display:flex;flex-direction:column;gap:12px}
+  .loopcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:15px 16px}
+  .loopcard .lk{font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+  .loopcard p{margin:0;font-size:13px;color:var(--muted)}
+  .loopcard p b{color:var(--text)}
+  .statusline{font-family:var(--font-mono);font-size:11.5px;color:var(--faint);border-left:2px solid var(--sev2);padding:8px 0 8px 14px;margin-top:18px}
+  .statusline b{color:var(--sev2)}
+
+  /* ---- learning loop diagram ---- */
+  .loop-diagram-wrap{margin:28px 0 0}
+  .loop-diagram-eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+  .loop-diagram{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .lnode{display:flex;flex-direction:column;gap:3px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;min-width:130px;max-width:160px}
+  .lnode .ln-label{font-family:var(--font-mono);font-size:12px;color:var(--text);font-weight:600}
+  .lnode .ln-sub{font-family:var(--font-body);font-size:11px;color:var(--muted)}
+  .lnode.live{border-color:var(--accent-dim);background:rgba(52,224,208,.06)}
+  .lnode.live .ln-label{color:var(--accent)}
+  .lnode.planned{border-style:dashed;border-color:var(--faint);opacity:.75}
+  .lnode.planned .ln-label{color:var(--muted)}
+  .larrow{color:var(--faint);font-family:var(--font-mono);font-size:18px;flex:none;padding:0 2px}
+  .larrow.planned{opacity:.45}
+  .loop-legend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:12px}
+  .loop-legend .ll-live::before{content:"●";color:var(--accent);margin-right:5px}
+  .loop-legend .ll-planned::before{content:"◌";color:var(--faint);margin-right:5px}
+  @media (max-width:680px){.loop-diagram{gap:8px}.lnode{min-width:110px;padding:9px 10px}}
+
+  /* ---- flowchart (top-down decision flow) ---- */
+  .flow{display:flex;flex-direction:column;align-items:center;gap:0;margin:6px auto 0;max-width:760px}
+  .fb{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 18px;text-align:center;max-width:560px;width:100%}
+  .fb .fb-k{font-family:var(--font-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .fb .fb-t{font-family:var(--font-display);font-weight:700;font-size:16px;color:var(--text)}
+  .fb .fb-s{font-size:12px;color:var(--muted);margin-top:3px}
+  .fb.alert{border-color:var(--accent-dim);background:rgba(52,224,208,.07)}
+  .fb.alert .fb-t{color:var(--accent)}
+  .fb.always{border-color:var(--accent-dim)}
+  .fb.report{border-color:var(--sev3);background:rgba(255,210,63,.05)}
+  .fb.report .fb-t{color:var(--sev3)}
+  .fb .chips{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:9px}
+  .fb .fc{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);background:var(--ground);border:1px solid var(--line);border-radius:5px;padding:3px 7px}
+  .fconn{width:2px;height:22px;background:linear-gradient(var(--accent),var(--accent-dim));opacity:.5}
+  /* decision node */
+  .fdia{display:flex;align-items:center;justify-content:center;gap:9px;border:1.5px solid var(--sev3);background:rgba(255,210,63,.07);border-radius:10px;padding:13px 22px;margin:4px 0;max-width:420px;text-align:center}
+  .fdia .dq{font-size:16px;line-height:1}
+  .fdia .lab{font-family:var(--font-mono);font-size:12.5px;color:var(--sev3);line-height:1.3}
+  .fdia .lab b{color:var(--text);font-weight:700}
+  /* branch row */
+  .fbranch{display:flex;gap:18px;width:100%;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin-top:4px}
+  .fleg{display:flex;flex-direction:column;align-items:center;flex:1;min-width:230px;max-width:300px}
+  .fleg .ftag{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;padding:3px 11px;border-radius:999px;margin-bottom:8px}
+  .fleg.yes .ftag{color:var(--ground);background:var(--sev3)}
+  .fleg.no .ftag{color:var(--sev4);border:1px solid var(--accent-dim);background:rgba(70,209,127,.07)}
+  .fmerge{font-family:var(--font-mono);font-size:11px;color:var(--faint);margin:14px 0 4px;text-align:center}
+
+  footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--muted);font-family:var(--font-mono);font-size:12px}
+  footer a{color:var(--accent);text-decoration:none}
+
+  @media (max-width:820px){.treebox{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+
+<div class="topbar">
+  <div class="row">
+    <div class="brand"><span class="dot"></span>AI&nbsp;OPS&nbsp;/&nbsp;decision&nbsp;trees</div>
+    <nav class="topnav">
+      <a href="#flow">Flow</a>
+      <a href="#decisions">Two&nbsp;Decisions</a>
+      <a href="#matrix">Routing&nbsp;Matrix</a>
+      <a href="#triage">Triage&nbsp;Trees</a>
+      <a class="cta" href="demo-ir-agent-overview.html">&larr;&nbsp;Agent&nbsp;Overview</a>
+    </nav>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">How the agent decides where to dig</p>
+    <h1>Every alert<br>routes itself through<br>a <span class="sig">decision tree</span>.</h1>
+    <p class="lede">The agent doesn't run everything every time. It classifies the alert into one of 11 categories, then a per-category decision tree decides which specialists to wake and in what order — so a SQL deadlock and a Pub/Sub backlog get different teams.</p>
+  </header>
+
+  <!-- ============ FLOWCHART ============ -->
+  <section id="flow" style="padding-top:30px">
+    <div class="sec-head">
+      <p class="secno">00 / THE FLOW</p>
+      <h2>What runs, what gets skipped</h2>
+      <p>Tier-1 always runs in full. The only branch is Tier-2: the dispatcher reads the category and either wakes specialists or skips them. This is that decision, top to bottom.</p>
+    </div>
+
+    <div class="flow" aria-label="Decision flowchart">
+      <div class="fb alert"><div class="fb-k">input</div><div class="fb-t">🔔 Alert</div></div>
+      <div class="fconn"></div>
+
+      <div class="fb"><div class="fb-k">stage 01 · classify</div><div class="fb-t">Classify the alert</div><div class="fb-s">→ category · severity · service · gcp project · timestamp</div></div>
+      <div class="fconn"></div>
+
+      <div class="fb always"><div class="fb-k">stage 02–03 · always runs</div><div class="fb-t">Load context + 9 Tier-1 investigators (parallel)</div><div class="fb-s">never gated — every alert gets the full Tier-1 sweep</div>
+        <div class="chips"><span class="fc">cloud_run</span><span class="fc">compute</span><span class="fc">logging</span><span class="fc">metrics</span><span class="fc">datadog</span><span class="fc">sentry</span><span class="fc">deploy</span><span class="fc">known_issues</span><span class="fc">teams</span></div>
+      </div>
+      <div class="fconn"></div>
+
+      <div class="fb"><div class="fb-k">stage 04 · synthesize</div><div class="fb-t">Cross-validate &amp; find root cause</div></div>
+      <div class="fconn"></div>
+
+      <div class="fdia" role="img" aria-label="decision: does this category need Tier-2 specialists?">
+        <span class="dq">◇</span>
+        <div class="lab"><b>Stage 05 —</b> does this category need a Tier-2 specialist?</div>
+      </div>
+
+      <div class="fbranch">
+        <div class="fleg yes">
+          <span class="ftag">YES &mdash; dispatch</span>
+          <div class="fb"><div class="fb-k">8 of 11 categories</div><div class="fb-t">Wake matched Tier-2</div>
+            <div class="chips"><span class="fc">sql_dba</span><span class="fc">codebase</span><span class="fc">cache</span><span class="fc">auth_security</span><span class="fc">pubsub</span></div>
+            <div class="fb-s" style="margin-top:8px">e.g. sql-database → sql_dba · performance → sql_dba + cache</div>
+          </div>
+        </div>
+        <div class="fleg no">
+          <span class="ftag">NO &mdash; skip</span>
+          <div class="fb"><div class="fb-k">3 categories</div><div class="fb-t">Tier-1 was enough</div>
+            <div class="chips"><span class="fc">cloud-infrastructure</span><span class="fc">monitoring-meta</span><span class="fc">unknown</span></div>
+            <div class="fb-s" style="margin-top:8px">no specialist spun up</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fmerge">both paths rejoin &darr;</div>
+      <div class="fb report"><div class="fb-k">stage 06–08</div><div class="fb-t">📋 Report → verify → persist</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TWO DECISIONS ============ -->
+  <section id="decisions">
+    <div class="sec-head">
+      <p class="secno">01 / THE MODEL</p>
+      <h2>Two decisions drive the whole run</h2>
+      <p>Classification picks the lane. Routing picks the team. Everything downstream follows from these two.</p>
+    </div>
+
+    <div class="decide">
+      <div class="dnode">
+        <div class="dk">Input</div>
+        <h3>🔔 Raw alert</h3>
+        <p>Free-text from PagerDuty, Datadog, GCP, Sentry or Teams.</p>
+      </div>
+      <div class="darrow">&rarr;</div>
+      <div class="dnode">
+        <div class="dk">Decision 1 · classify</div>
+        <h3>Which kind?</h3>
+        <p>Matched to one of <b style="color:var(--text)">11 categories</b> by keywords and description — sets severity, service and the GCP project.</p>
+        <span class="tag">11 categories</span>
+      </div>
+      <div class="darrow">&rarr;</div>
+      <div class="dnode">
+        <div class="dk">Decision 2 · route</div>
+        <h3>Who digs in?</h3>
+        <p><b style="color:var(--text)">9 Tier-1 investigators always run.</b> The category's tree decides which <b style="color:var(--sev3)">Tier-2 specialists</b> wake — or whether Tier-1 already suffices.</p>
+        <span class="tag">tier-1 always · tier-2 on match</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ROUTING MATRIX ============ -->
+  <section id="matrix">
+    <div class="sec-head">
+      <p class="secno">02 / ROUTING</p>
+      <h2>Category &rarr; specialist routing</h2>
+      <p>The decision table the agent applies every run. Ordered by how often each category shows up (from a 200-incident analysis). Tier-1 runs for all; the right column is who else gets dispatched.</p>
+    </div>
+
+    <div class="mwrap">
+      <table class="matrix">
+        <thead>
+          <tr><th>Category</th><th>Frequency</th><th>First triage step</th><th>Tier-2 dispatched</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="cat">application-errors</td><td class="freq">25%</td><td class="firstm">sentry_error</td><td><div class="route"><span class="spec">codebase</span></div></td></tr>
+          <tr><td class="cat">business-logic</td><td class="freq">17%</td><td class="firstm">sentry_error</td><td><div class="route"><span class="spec">codebase</span></div></td></tr>
+          <tr><td class="cat">deploy-release</td><td class="freq">14%</td><td class="firstm">deploy_correlation</td><td><div class="route"><span class="spec">codebase</span></div></td></tr>
+          <tr><td class="cat">scheduled-jobs</td><td class="freq">11%</td><td class="firstm">gcp_logging</td><td><div class="route"><span class="spec">sql_dba</span></div></td></tr>
+          <tr><td class="cat">data-integrity</td><td class="freq">8%</td><td class="firstm">gcp_logging</td><td><div class="route"><span class="spec">sql_dba</span><span class="spec">codebase</span></div></td></tr>
+          <tr><td class="cat">pubsub-messaging</td><td class="freq">8%</td><td class="firstm">gcp_logging</td><td><div class="route"><span class="spec">pubsub</span></div></td></tr>
+          <tr><td class="cat">unknown</td><td class="freq">8%</td><td class="firstm">&mdash;</td><td><div class="route"><span class="t1ok">tier-1 sufficient</span></div></td></tr>
+          <tr><td class="cat">cloud-infrastructure</td><td class="freq">6%</td><td class="firstm">cloud_run_health</td><td><div class="route"><span class="t1ok">tier-1 sufficient</span></div></td></tr>
+          <tr><td class="cat">sql-database</td><td class="freq">3%</td><td class="firstm">datadog_observability</td><td><div class="route"><span class="spec">sql_dba</span></div></td></tr>
+          <tr><td class="cat">auth-security</td><td class="freq">3%</td><td class="firstm">gcp_logging</td><td><div class="route"><span class="spec">auth_security</span></div></td></tr>
+          <tr><td class="cat">performance</td><td class="freq">3%</td><td class="firstm">datadog_observability</td><td><div class="route"><span class="spec">sql_dba</span><span class="spec">cache</span></div></td></tr>
+          <tr><td class="cat">monitoring-meta</td><td class="freq">3%</td><td class="firstm">gcp_metrics</td><td><div class="route"><span class="t1ok">tier-1 sufficient</span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="mlegend">
+      <span><span class="spec">specialist</span> Tier-2 agent woken for this category</span>
+      <span><span class="t1ok">tier-1 sufficient</span> no specialist needed</span>
+    </div>
+  </section>
+
+  <!-- ============ TRIAGE TREES ============ -->
+  <section id="triage">
+    <div class="sec-head">
+      <p class="secno">03 / THE TREE</p>
+      <h2>Inside one tree &mdash; and how it sharpens</h2>
+      <p>Each category carries an ordered triage playbook: which agent to ask first, second, third. Here's <span class="cat">sql-database</span>. The order is meant to put the highest-yield check up front.</p>
+    </div>
+
+    <div class="treebox">
+      <div class="ladder" aria-label="sql-database triage tree">
+        <div class="lt">sql-database · triage order</div>
+        <div class="step"><span class="so">1</span><span class="sa">datadog_observability — DB perf metrics &amp; slow queries</span><span class="stier">T1</span></div>
+        <div class="step"><span class="so">2</span><span class="sa">sql_dba — analyze query perf &amp; blocking</span><span class="stier t2">T2</span></div>
+        <div class="step"><span class="so">3</span><span class="sa">gcp_logging — search for DB errors</span><span class="stier">T1</span></div>
+        <div class="step"><span class="so">4</span><span class="sa">gcp_metrics — Cloud SQL metrics</span><span class="stier">T1</span></div>
+        <div class="step"><span class="so">5</span><span class="sa">deploy_correlation — schema changes / migrations</span><span class="stier">T1</span></div>
+        <div class="step"><span class="so">…</span><span class="sa">known_issues · sentry · cloud_run · teams · compute</span><span class="stier">T1</span></div>
+      </div>
+
+      <div class="loop">
+        <div class="loopcard">
+          <div class="lk">What a tree stores</div>
+          <p>An ordered list of <b>(agent → action)</b> steps, each tagged Tier-1/Tier-2 with a <b>hit-rate</b> — how often that step actually found the root cause.</p>
+        </div>
+        <div class="loopcard">
+          <div class="lk">How it learns</div>
+          <p><b>Designed to learn — loop not yet built.</b> Each step carries a hit-rate, version, and skip-rule field, and every resolved incident is already persisted. Feeding that history back to re-rank steps and bump the tree version is the next phase; today the trees run at their v1 seeded order.</p>
+        </div>
+        <div class="loopcard">
+          <div class="lk">Why it matters</div>
+          <p>The agent <b>will get faster and cheaper over time</b> for each category — once the learning loop is built, without anyone rewriting prompts.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="loop-diagram-wrap" aria-label="Intended learning loop diagram">
+      <p class="loop-diagram-eyebrow">The intended learning loop</p>
+      <div class="loop-diagram">
+        <div class="lnode live">
+          <span class="ln-label">Incident resolved</span>
+          <span class="ln-sub">report + verification scored</span>
+        </div>
+        <span class="larrow">&rarr;</span>
+        <div class="lnode live">
+          <span class="ln-label">Persisted</span>
+          <span class="ln-sub">GCS + Firestore</span>
+        </div>
+        <span class="larrow planned">&rarr;</span>
+        <div class="lnode planned">
+          <span class="ln-label">Re-rank steps</span>
+          <span class="ln-sub">by hit-rate</span>
+        </div>
+        <span class="larrow planned">&rarr;</span>
+        <div class="lnode planned">
+          <span class="ln-label">Bump tree version</span>
+          <span class="ln-sub">skip low-yield steps</span>
+        </div>
+        <span class="larrow planned">&rarr;</span>
+        <div class="lnode planned">
+          <span class="ln-label">Sharper triage</span>
+          <span class="ln-sub">loops back to the tree</span>
+        </div>
+      </div>
+      <div class="loop-legend">
+        <span class="ll-live">live today</span>
+        <span class="ll-planned">planned — not yet built</span>
+      </div>
+    </div>
+
+    <p class="statusline"><b>Current state:</b> all 11 trees are seeded at a v1 baseline (hit-rate 0.5, 0 incidents). The learning loop is planned (schema in place, optimizer not yet built) — the trees will sharpen as real incidents accumulate.</p>
+  </section>
+
+  <footer>
+    <div>AI OPS · incident-response-agent · decision trees &nbsp;·&nbsp; source: categories.py · decision_tree_seeds.json</div>
+    <div style="margin-top:8px">&larr; Back to <a href="demo-ir-agent-overview.html">the agent overview &amp; live demo</a></div>
+  </footer>
+
+</div>

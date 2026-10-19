@@ -1,0 +1,37 @@
+{
+  "scenario_id": "sql-database-batch-update-blocking",
+  "category": "sql-database",
+  "severity": "sev2",
+  "service": "webcore",
+  "environment": "production",
+  "gcp_project": "acme-production-100000",
+  "root_cause_summary": "A configuration change enabled a recalculation job for one account. The job issued several hundred single-row UPDATEs inside one transaction, holding exclusive locks for 20-30 seconds at a time and producing a cascading blocking chain and deadlocks on the primary.",
+  "root_cause_confidence": "likely",
+  "tier2_agents_expected": [
+    "sql_dba_agent"
+  ],
+  "key_findings": [
+    "Blocking chain head is the recalculation job's batch-statement transaction, matching its stack trace",
+    "The configuration change landed ~16 minutes before blocking began",
+    "Exclusive locks measured at 20-30 seconds, well past the lock timeout of dependent readers",
+    "Two job traces show deadlock victims rolled back and retried"
+  ],
+  "tags": [
+    "sqlprod-c1",
+    "deadlock",
+    "feature-flag",
+    "blocking-chain",
+    "lock-wait",
+    "single-row-updates",
+    "long-transaction",
+    "recalculation-job",
+    "lock-escalation"
+  ],
+  "telemetry_baseline": {
+    "total_tokens": 330000,
+    "total_tool_uses": 133,
+    "agents_dispatched": 6,
+    "agents_completed": 5,
+    "agents_skipped": 1
+  }
+}

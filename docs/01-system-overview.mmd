@@ -1,0 +1,84 @@
+graph TD
+    subgraph Sources["Alert Sources"]
+        DD[Datadog]
+        PD[PagerDuty]
+        GCPMon[GCP Monitoring]
+        TeamsIn[Teams Channels]
+    end
+
+    subgraph Orchestration["Orchestration Layer"]
+        ORCH[Orchestrator\nAgent Engine · SequentialAgent\nADK 2.2.0]
+        STATE[(Session State\nVertexAiSessionService\n→ Agent Engine managed)]
+    end
+
+    subgraph Pipeline["8-Stage Pipeline"]
+        direction TB
+        S1[Stage 1: Alert Classifier]
+        S2[Stage 2: Context Parallel\nhistorical + infra]
+        S3[Stage 3: Tier 1 Parallel\n9 investigation agents]
+        S4[Stage 4: Synthesis Agent]
+        S5[Stage 5: Tier 2 Dispatcher\nconditional specialists]
+        S6[Stage 6: Report Agent]
+        S7[Stage 7: Verification Agent]
+        S8[Stage 8: Persistence Agent]
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
+    end
+
+    subgraph Agents["Investigation Agents · Hub-and-Spoke"]
+        direction LR
+        subgraph T1["Tier 1 — Always Parallel"]
+            direction TB
+            CR[Cloud Run Health]
+            CE[Compute Engine Health]
+            LOG[GCP Logging]
+            MET[GCP Metrics]
+            DDOG[Datadog Obs]
+            SENT[Sentry Error]
+            DEP[Deploy Corr]
+            TCH[Teams Context]
+            KI[Known Issues]
+        end
+        subgraph T2["Tier 2 — Conditional"]
+            direction TB
+            PUB[Pub/Sub]
+            CACHE[Cache]
+            SQL[SQL DBA]
+            AUTH[Auth/Security]
+            CODE[Codebase]
+        end
+    end
+
+    subgraph Gateway["Bifrost Gateway"]
+        BF[llm-gateway.internal.example\nread-only tool allowlists]
+        CB[Circuit Breaker\nfallback: direct Vertex AI]
+        LLM[LLM Providers\nVertex · Anthropic]
+        MCP[MCP Servers\nADO · Datadog · Sentry\nAtlassian]
+    end
+
+    subgraph Data["Data Layer"]
+        FS[(Firestore Native mode\nincidents + decision_trees)]
+        GCS[(GCS\nincident-summaries\nJSON archives)]
+    end
+
+    subgraph HumanIF["Human Interface"]
+        BOT[Teams Bot\nGraph API · 90s batching]
+        ENG[Engineers]
+    end
+
+    Sources -->|manual input| ORCH
+    ORCH --- STATE
+    ORCH --> Pipeline
+    S3 --> T1
+    S5 -.->|category-based| T2
+    T1 -->|findings| S4
+    T2 -->|findings| S6
+    ORCH <--> BF
+    BF --> CB
+    CB --> LLM
+    BF --> MCP
+    S8 --> FS
+    S8 --> GCS
+    FS -->|past incidents\ndecision trees| S2
+    GCS -->|fallback reads| S2
+    S6 --> BOT
+    BOT <--> ENG

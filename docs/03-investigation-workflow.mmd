@@ -1,0 +1,39 @@
+flowchart TD
+    START([Alert received]) --> CLASSIFY[Stage 1: Classification Agent<br/>LlmAgent: categorize into<br/>1 of 11 categories]
+    CLASSIFY --> CONTEXT[Stage 2: Context Parallel<br/>ParallelAgent]
+
+    subgraph "Context Loading"
+        CONTEXT --> HISTORY[Historical Search<br/>query Firestore incidents<br/>for similar past incidents]
+        CONTEXT --> INFRA[Infrastructure Context<br/>service → GCP project mapping]
+    end
+
+    HISTORY & INFRA --> DISPATCH[Stage 3: Tier 1 Parallel]
+
+    subgraph "Tier 1 — Always (9 agents)"
+        DISPATCH --> A1[Cloud Run Health]
+        DISPATCH --> A1b[Compute Engine Health]
+        DISPATCH --> A2[GCP Logging]
+        DISPATCH --> A3[GCP Metrics]
+        DISPATCH --> A4[Datadog Observability]
+        DISPATCH --> A5[Sentry Error]
+        DISPATCH --> A6[Deploy Correlation]
+        DISPATCH --> A7[Teams Context]
+        DISPATCH --> A8[Known Issues]
+    end
+
+    A1 & A1b & A2 & A3 & A4 & A5 & A6 & A7 & A8 --> SYNTH[Stage 4: Synthesis Agent<br/>merge findings · identify gaps]
+    SYNTH --> NEED_T2{Stage 5: Tier 2 Dispatcher<br/>category-based dispatch needed?}
+
+    NEED_T2 -->|Yes| PAR2[Tier 2: Conditional Agents]
+    subgraph "Tier 2 — Category-Driven"
+        PAR2 --> B1[Pub/Sub Agent]
+        PAR2 --> B2[Cache Agent]
+        PAR2 --> B3[SQL DBA Agent]
+        PAR2 --> B4[Auth/Security Agent]
+        PAR2 --> B5[Codebase Agent]
+    end
+    PAR2 --> REPORT
+
+    NEED_T2 -->|No| REPORT
+    REPORT[Stage 6: Report Agent<br/>Teams-ready markdown] --> VERIFY[Stage 7: Verification Agent<br/>independent quality check<br/>Gemini 2.5 Flash]
+    VERIFY --> PERSIST[Stage 8: Persistence Agent<br/>GCS + Firestore dual-write]

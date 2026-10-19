@@ -1,0 +1,76 @@
+erDiagram
+    incidents {
+        uuid id PK
+        timestamptz created_at
+        timestamptz resolved_at
+        varchar status "active|investigating|resolved|postmortem"
+        varchar category "11 categories"
+        varchar severity "P1-P5"
+        text title
+        text summary
+        jsonb alert_payload "sanitized"
+        vector embedding "768 dims"
+        text[] services_affected
+        varchar source "datadog|pagerduty|gcp|teams"
+    }
+
+    investigation_findings {
+        uuid id PK
+        uuid incident_id FK
+        varchar agent_name "12 agent names"
+        varchar agent_tier "1|2"
+        jsonb findings
+        jsonb recommended_actions "Phase 1: always empty"
+        timestamptz collected_at
+        int tokens_used
+    }
+
+    adk_sessions {
+        varchar session_id PK
+        varchar app_name
+        varchar user_id
+        jsonb state "survives container restart"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    dedup_window {
+        uuid id PK
+        varchar service_name
+        varchar alert_type
+        uuid incident_id FK
+        timestamptz window_start
+        timestamptz window_end "window_start + 5 min"
+    }
+
+    decision_tree_nodes {
+        uuid id PK
+        varchar category FK
+        text condition
+        text action
+        int success_count
+        int total_count
+        float confidence
+    }
+
+    postmortem_interviews {
+        uuid id PK
+        uuid incident_id FK
+        varchar responder_email
+        jsonb qa_pairs "13 standard questions"
+        timestamptz completed_at
+    }
+
+    alert_correlations {
+        uuid id PK
+        uuid primary_incident FK
+        uuid correlated_incident FK
+        float similarity_score
+        varchar correlation_type "time_window|semantic"
+    }
+
+    incidents ||--o{ investigation_findings : has
+    incidents ||--o| postmortem_interviews : has
+    incidents ||--o{ alert_correlations : primary
+    incidents ||--o{ dedup_window : tracks
+    adk_sessions ||--o| incidents : "state for"

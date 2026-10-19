@@ -1,0 +1,128 @@
+<style>
+  :root{
+    --bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--ink:#e8edf4;--ink-soft:#9aa7b8;--ink-faint:#5f6c7e;
+    --line:#2a303b;--accent:#6ea8fe;--work:#4a8fe7;--gap:#e0663a;--gapsoft:#3a2318;--good:#3fae72;--mono:ui-monospace,"Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{--bg:#f5f7fa;--panel:#fff;--panel2:#eef2f7;--ink:#141922;--ink-soft:#4a5768;--ink-faint:#8494a6;--line:#dde3ec;--gapsoft:#fbe9e0;}
+  }
+  :root[data-theme="dark"]{--bg:#0f1115;--panel:#171a21;--panel2:#1e222b;--ink:#e8edf4;--ink-soft:#9aa7b8;--ink-faint:#5f6c7e;--line:#2a303b;--gapsoft:#3a2318;}
+  :root[data-theme="light"]{--bg:#f5f7fa;--panel:#fff;--panel2:#eef2f7;--ink:#141922;--ink-soft:#4a5768;--ink-faint:#8494a6;--line:#dde3ec;--gapsoft:#fbe9e0;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:clamp(1rem,3vw,2.5rem)}
+  h1{font-size:clamp(1.4rem,3.5vw,2rem);margin:0 0 .3rem;letter-spacing:-.02em}
+  .sub{color:var(--ink-soft);margin:0 0 1.5rem;font-size:.95rem}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 .5rem}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1.2rem 1.3rem;margin-bottom:1.3rem}
+  h2{font-size:1.05rem;margin:0 0 .9rem}
+  .kpi{display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1.4rem}
+  .kpi div{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:.7rem 1rem;flex:1;min-width:130px}
+  .kpi .n{font-family:var(--mono);font-size:1.5rem;font-weight:700}
+  .kpi .l{color:var(--ink-soft);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+  .kpi .gap .n{color:var(--gap)}
+  /* gantt */
+  .gantt{display:grid;grid-template-columns:160px 1fr 64px;gap:6px 10px;align-items:center;font-size:.82rem}
+  .gantt .lbl{font-family:var(--mono);color:var(--ink-soft);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .track{position:relative;height:22px;background:var(--panel2);border-radius:4px;overflow:hidden}
+  .bar{position:absolute;height:100%;border-radius:4px;top:0}
+  .bar.work{background:linear-gradient(90deg,var(--work),var(--accent))}
+  .bar.gapb{background:repeating-linear-gradient(45deg,var(--gap),var(--gap) 4px,transparent 4px,transparent 8px);opacity:.8}
+  .dur{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+  .dur.g{color:var(--gap);font-weight:700}
+  table{border-collapse:collapse;width:100%;font-size:.84rem}
+  th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft)}
+  td.n,th.n{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+  .scroll{overflow-x:auto}
+  .tagpar{color:var(--good);font-family:var(--mono);font-size:.72rem}
+  .tagseq{color:var(--gap);font-family:var(--mono);font-size:.72rem}
+  .bad{color:var(--gap);font-weight:700}
+  .legend{display:flex;gap:1.2rem;font-size:.78rem;color:var(--ink-soft);margin-top:.7rem}
+  .sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+  .note{color:var(--ink-soft);font-size:.86rem;margin:.5rem 0 0}
+</style>
+<div class="wrap">
+  <p class="eyebrow">IR Agent · e2e timing · alert03 (SQL) · before vs after speed work</p>
+  <h1>591s → 360s (warm)</h1>
+  <p class="sub">Every agent event captured with wall-clock arrival time. Code-only persistence + per-agent MCP sessions + Haiku on investigators cut a warm run from 591s to <b>360s (−39%)</b>. What remains is two Sonnet generation stages (synthesis + report).</p>
+
+  <div class="kpi">
+    <div><div class="n">360s</div><div class="l">warm total (was 591)</div></div>
+    <div class="good2"><div class="n">63s</div><div class="l">Tier-1 (was 138)</div></div>
+    <div class="good2"><div class="n">~1s</div><div class="l">persistence (was 128)</div></div>
+    <div class="gap"><div class="n">~150s</div><div class="l">synthesis+report gen (left)</div></div>
+  </div>
+  <style>.kpi .good2 .n{color:var(--good)}</style>
+
+  <div class="card">
+    <h2>Phase timeline</h2>
+    <div class="gantt" id="gantt"></div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--work)"></span>agent working</span>
+      <span><span class="sw" style="background:var(--gap)"></span>gap / generation (no tool events)</span>
+    </div>
+    <p class="note">Bars are positioned by actual start/end times. Hatched orange = stretches where a single Sonnet agent is generating a large output with no intermediate events (report 9.9k chars, persistence builds the full incident doc).</p>
+  </div>
+
+  <div class="card scroll">
+    <h2>Phase breakdown</h2>
+    <table id="phaseTable"></table>
+  </div>
+
+  <div class="card scroll">
+    <h2>Tier-1 agents — are they actually parallel?</h2>
+    <table id="agentTable"></table>
+    <p class="note">All start ~38-41s (good — they fire together) but each runs 90-138s. With per-agent sessions they overlap, yet the barrier is still the slowest agent (deploy_correlation 138s). Model = Haiku.</p>
+  </div>
+
+  <div class="card">
+    <h2>Fixed vs. remaining</h2>
+    <p class="note" style="font-size:.92rem;line-height:1.6">
+    <b style="color:var(--good)">Fixed:</b> persistence 128s→~1s (code-only, no LLM); Tier-1 138s→63s (per-agent MCP sessions let Haiku agents truly parallelize). <br>
+    <b style="color:var(--gap)">Remaining:</b> synthesis (~80s) + report (~70s) = <b>~150s</b> of sequential <b>Sonnet</b> generation — the accuracy-critical reasoning stages. Getting under 180s would require moving these to a faster model (a direct accuracy tradeoff) plus handling the ~1/5 cold-start miss (retry wrapper already exists). Reliable ~250-300s is achievable without touching reasoning-stage accuracy.
+    </p>
+  </div>
+</div>
+<script>
+const total=359.7;
+const phases=[
+ {phase:"1 classify",start:5.7,end:5.7,span:0.0,calls:0},
+ {phase:"2 infra_context",start:9.6,end:39.0,span:29.4,calls:3},
+ {phase:"3 tier1 (parallel, Haiku)",start:40.5,end:103.4,span:62.9,calls:55},
+ {phase:"4 synthesis (Sonnet gen)",start:103.4,end:183.9,span:80.5,calls:0,gen:true},
+ {phase:"5 tier2 (Haiku)",start:211.4,end:265.0,span:53.6,calls:1},
+ {phase:"6 report (Sonnet gen)",start:265.0,end:334.9,span:69.9,calls:0,gen:true},
+ {phase:"7 verification (Sonnet)",start:338.1,end:359.3,span:21.2,calls:2,gen:true},
+ {phase:"8 persistence (code, ~1s async)",start:359.3,end:360.3,span:1.0,calls:3},
+];
+const agents=[
+ {agent:"infra_context",first:7.5,last:36.1,span:28.6,calls:3,model:"Sonnet"},
+ {agent:"sentry_error",first:37.7,last:163.8,span:126.1,calls:6,model:"Haiku"},
+ {agent:"deploy_correlation",first:37.9,last:175.9,span:138.0,calls:13,model:"Haiku"},
+ {agent:"known_issues",first:38.1,last:162.0,span:123.9,calls:7,model:"Haiku"},
+ {agent:"teams_context",first:38.3,last:48.3,span:10.0,calls:1,model:"Haiku"},
+ {agent:"datadog_observability",first:38.6,last:162.9,span:124.3,calls:7,model:"Haiku"},
+ {agent:"cloud_run_health",first:39.2,last:133.0,span:93.8,calls:5,model:"Haiku"},
+ {agent:"historical_context",first:39.6,last:168.6,span:129.0,calls:6,model:"Sonnet"},
+ {agent:"gcp_metrics",first:40.3,last:158.5,span:118.2,calls:5,model:"Haiku"},
+ {agent:"gcp_logging",first:41.4,last:150.8,span:109.4,calls:6,model:"Haiku"},
+];
+const g=document.getElementById('gantt');
+phases.forEach(p=>{
+  const lbl=document.createElement('div');lbl.className='lbl';lbl.textContent=p.phase;
+  const track=document.createElement('div');track.className='track';
+  const bar=document.createElement('div');bar.className='bar '+((p.gap||p.gen)?'gapb':'work');
+  bar.style.left=(100*p.start/total)+'%';bar.style.width=Math.max(0.4,100*p.span/total)+'%';
+  track.appendChild(bar);
+  const dur=document.createElement('div');dur.className='dur'+((p.gap||p.gen)?' g':'');dur.textContent=p.span.toFixed(0)+'s';
+  g.appendChild(lbl);g.appendChild(track);g.appendChild(dur);
+});
+const pt=document.getElementById('phaseTable');
+pt.innerHTML='<thead><tr><th>Phase</th><th class="n">start</th><th class="n">end</th><th class="n">span</th><th class="n">% total</th><th class="n">tool calls</th></tr></thead><tbody>'+
+ phases.map(p=>`<tr><td>${p.phase}${p.gen?' <span class="tagseq">gen</span>':''}${p.gap?' <span class="tagseq">gap</span>':''}</td><td class="n">${p.start.toFixed(1)}</td><td class="n">${p.end.toFixed(1)}</td><td class="n ${(p.gen||p.gap)?'':''}">${p.span.toFixed(1)}</td><td class="n">${(100*p.span/total).toFixed(1)}%</td><td class="n">${p.calls}</td></tr>`).join('')+'</tbody>';
+const at=document.getElementById('agentTable');
+at.innerHTML='<thead><tr><th>Tier-1 agent</th><th>model</th><th class="n">first call</th><th class="n">last event</th><th class="n">span</th><th class="n">tool calls</th></tr></thead><tbody>'+
+ agents.map(a=>`<tr><td>${a.agent}</td><td>${a.model}</td><td class="n">${a.first.toFixed(1)}</td><td class="n">${a.last.toFixed(1)}</td><td class="n">${a.span.toFixed(1)}</td><td class="n">${a.calls}</td></tr>`).join('')+'</tbody>';
+</script>

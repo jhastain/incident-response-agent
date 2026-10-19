@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Response Agent — Process Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #06060b;
+    --surface: #0d0d14;
+    --surface2: #14141f;
+    --surface3: #1a1a28;
+    --border: #252538;
+    --border-glow: #3a3a5c;
+    --text: #e8ecf4;
+    --text-dim: #8891a5;
+    --text-muted: #5a6175;
+    --accent: #4f8fff;
+    --accent-dim: #2a5cb8;
+    --cyan: #22d3ee;
+    --green: #34d399;
+    --green-dim: #065f46;
+    --amber: #fbbf24;
+    --amber-dim: #78350f;
+    --red: #f87171;
+    --red-dim: #7f1d1d;
+    --purple: #a78bfa;
+    --purple-dim: #4c1d95;
+    --pink: #f472b6;
+    --orange: #fb923c;
+    --blue-glow: rgba(79,143,255,0.08);
+    --green-glow: rgba(52,211,153,0.06);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 4rem 2rem;
+    position: relative;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 30%, rgba(79,143,255,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 70% 70%, rgba(167,139,250,0.05) 0%, transparent 60%);
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h60M30 0v60' stroke='%23ffffff' stroke-width='0.3' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.35rem 1rem; border-radius: 99px;
+    background: rgba(79,143,255,0.08); border: 1px solid rgba(79,143,255,0.2);
+    color: var(--accent); font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .hero h1 {
+    font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 900;
+    letter-spacing: -0.04em; line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, var(--cyan) 50%, var(--accent) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    max-width: 900px;
+  }
+  .hero .subtitle {
+    margin-top: 1.5rem; font-size: 1.15rem; color: var(--text-dim);
+    max-width: 700px; line-height: 1.7; font-weight: 300;
+  }
+  .hero .principles {
+    display: flex; gap: 2rem; margin-top: 3rem; flex-wrap: wrap; justify-content: center;
+  }
+  .hero .principle {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.82rem; color: var(--text-dim); font-weight: 500;
+  }
+  .hero .principle .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+  }
+  .hero .principle:nth-child(1) .icon { background: rgba(52,211,153,0.12); }
+  .hero .principle:nth-child(2) .icon { background: rgba(79,143,255,0.12); }
+  .hero .principle:nth-child(3) .icon { background: rgba(251,191,36,0.12); }
+  .hero .principle:nth-child(4) .icon { background: rgba(167,139,250,0.12); }
+  .hero .principle:nth-child(5) .icon { background: rgba(248,113,113,0.12); }
+
+  .scroll-hint {
+    position: absolute; bottom: 2rem;
+    font-size: 0.75rem; color: var(--text-muted);
+    animation: bob 2s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100%{transform:translateY(0);} 50%{transform:translateY(6px);} }
+
+  /* SECTIONS */
+  section { padding: 5rem 2rem; max-width: 1200px; margin: 0 auto; position: relative; }
+  .section-label {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; margin-bottom: 0.6rem;
+  }
+  .section-label.blue { color: var(--accent); }
+  .section-label.green { color: var(--green); }
+  .section-label.purple { color: var(--purple); }
+  .section-label.amber { color: var(--amber); }
+  .section-label.red { color: var(--red); }
+  h2 { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+  .section-desc { color: var(--text-dim); font-size: 0.95rem; max-width: 650px; margin-bottom: 3rem; }
+
+  /* PROCESS FLOW */
+  .flow { position: relative; }
+  .flow-line {
+    position: absolute; left: 39px; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--purple) 50%, var(--green) 100%);
+    opacity: 0.3;
+  }
+  .flow-step {
+    display: flex; gap: 1.5rem; margin-bottom: 2.5rem; position: relative;
+  }
+  .flow-step .step-marker {
+    width: 80px; min-width: 80px; display: flex; flex-direction: column; align-items: center; padding-top: 0.3rem;
+  }
+  .flow-step .step-dot {
+    width: 18px; height: 18px; border-radius: 50%; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.55rem; font-weight: 800; color: #000;
+  }
+  .flow-step .step-time {
+    font-size: 0.65rem; color: var(--text-muted); margin-top: 0.4rem; font-weight: 500;
+    white-space: nowrap;
+  }
+  .flow-step .step-content {
+    flex: 1; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 14px;
+    padding: 1.5rem; transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .flow-step .step-content:hover {
+    border-color: var(--border-glow);
+    box-shadow: 0 0 30px rgba(79,143,255,0.04);
+  }
+  .flow-step .step-content h3 {
+    font-size: 1.05rem; font-weight: 700; margin-bottom: 0.3rem;
+    letter-spacing: -0.01em;
+  }
+  .flow-step .step-content .desc {
+    font-size: 0.85rem; color: var(--text-dim); line-height: 1.55;
+  }
+  .flow-step .step-content .tags {
+    display: flex; gap: 0.4rem; margin-top: 0.8rem; flex-wrap: wrap;
+  }
+  .tag {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 5px;
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 0.02em;
+  }
+  .tag-blue { background: rgba(79,143,255,0.1); color: var(--accent); }
+  .tag-green { background: rgba(52,211,153,0.1); color: var(--green); }
+  .tag-amber { background: rgba(251,191,36,0.1); color: var(--amber); }
+  .tag-red { background: rgba(248,113,113,0.1); color: var(--red); }
+  .tag-purple { background: rgba(167,139,250,0.1); color: var(--purple); }
+  .tag-cyan { background: rgba(34,211,238,0.1); color: var(--cyan); }
+
+  /* PARALLEL AGENTS */
+  .agents-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.6rem; margin-top: 1rem;
+  }
+  .agent-chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.5rem 0.7rem;
+    font-size: 0.75rem; font-weight: 500; color: var(--text-dim);
+    text-align: center; transition: all 0.2s;
+  }
+  .agent-chip:hover { border-color: var(--accent); color: var(--text); }
+  .agent-chip .agent-num { font-weight: 700; color: var(--accent); margin-right: 0.3rem; }
+  .agent-chip.tier2 { border-color: rgba(167,139,250,0.2); }
+  .agent-chip.tier2 .agent-num { color: var(--purple); }
+
+  /* AUTONOMY LEVELS */
+  .autonomy-bar {
+    display: flex; gap: 0; margin: 2rem 0; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .autonomy-level {
+    flex: 1; padding: 1rem; text-align: center; position: relative;
+    transition: background 0.3s;
+  }
+  .autonomy-level:not(:last-child) { border-right: 1px solid var(--border); }
+  .autonomy-level .level-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .autonomy-level .level-name { font-size: 0.82rem; font-weight: 600; margin-top: 0.3rem; }
+  .autonomy-level .level-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
+  .autonomy-level.active { background: rgba(79,143,255,0.08); }
+  .autonomy-level.active .level-label { color: var(--accent); }
+  .autonomy-level.future { opacity: 0.45; }
+
+  /* SAFETY LAYERS */
+  .safety-stack {
+    display: flex; flex-direction: column; gap: 0; margin: 2rem 0;
+  }
+  .safety-layer {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .safety-layer:first-child { border-radius: 12px 12px 0 0; }
+  .safety-layer:last-child { border-radius: 0 0 12px 12px; }
+  .safety-layer:not(:last-child) { border-bottom: none; }
+  .safety-layer:hover { border-color: var(--border-glow); }
+  .safety-layer .layer-num {
+    width: 28px; height: 28px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 800; flex-shrink: 0;
+  }
+  .safety-layer .layer-info { flex: 1; }
+  .safety-layer .layer-info h4 { font-size: 0.85rem; font-weight: 600; }
+  .safety-layer .layer-info p { font-size: 0.75rem; color: var(--text-muted); }
+
+  /* STATS BAR */
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem; margin: 3rem 0;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.2rem; text-align: center;
+  }
+  .stat .stat-value { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.03em; }
+  .stat .stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-top: 0.2rem; }
+  .stat.blue .stat-value { color: var(--accent); }
+  .stat.green .stat-value { color: var(--green); }
+  .stat.amber .stat-value { color: var(--amber); }
+  .stat.purple .stat-value { color: var(--purple); }
+  .stat.cyan .stat-value { color: var(--cyan); }
+  .stat.red .stat-value { color: var(--red); }
+
+  /* DIVIDER */
+  .divider {
+    height: 1px; max-width: 1200px; margin: 0 auto;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 3rem 2rem; text-align: center;
+    font-size: 0.78rem; color: var(--text-muted);
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .hero .principles { flex-direction: column; align-items: center; }
+    .agents-grid { grid-template-columns: repeat(2, 1fr); }
+    .autonomy-bar { flex-direction: column; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .flow-step .step-marker { width: 50px; min-width: 50px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge"><span class="dot"></span> Phase 1 — Read-Only, Human-in-the-Loop</div>
+  <h1>Incident Response Agent Platform</h1>
+  <p class="subtitle">
+    An ADK 2.2.0-powered investigation platform that receives alerts via webhooks, dispatches parallel investigation agents through Bifrost, and posts structured findings to Teams — building institutional memory with every incident.
+  </p>
+  <div class="principles">
+    <div class="principle"><div class="icon">L1</div> Assisted Autonomy</div>
+    <div class="principle"><div class="icon">R</div> Read-Only Enforcement</div>
+    <div class="principle"><div class="icon">D</div> Deterministic Checklists</div>
+    <div class="principle"><div class="icon">H</div> Hypothesis-Driven</div>
+    <div class="principle"><div class="icon">V</div> Verifiable Findings</div>
+  </div>
+  <div class="scroll-hint">Scroll to explore the process</div>
+</div>
+
+<!-- SYSTEM AT A GLANCE -->
+<section style="padding: 3rem 2rem;">
+  <div style="max-width: 1000px; margin: 0 auto; background: linear-gradient(135deg, rgba(79,143,255,0.05) 0%, rgba(167,139,250,0.05) 100%); border: 1px solid var(--border-glow); border-radius: 16px; padding: 2.5rem; text-align: center;">
+    <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); margin-bottom: 1rem;">System at a Glance</div>
+    <h2 style="font-size: 1.6rem; margin-bottom: 1.5rem;">Production-Ready Autonomous Investigation Platform</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--accent); line-height: 1;">16</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem;">Investigation Agents</div>
+      </div>
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--green); line-height: 1;">11</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem;">Alert Categories</div>
+      </div>
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--purple); line-height: 1;">~3 min</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem;">Investigation Time</div>
+      </div>
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--amber); line-height: 1;">$2–3</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem;">Per Incident Cost</div>
+      </div>
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--cyan); line-height: 1;">8/8</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem;">E2E Test Scenarios</div>
+      </div>
+      <div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--red); line-height: 1;">12/12</div>
+        <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.3rem;">Classification Accuracy</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT EXECUTIVES NEED TO KNOW -->
+<section style="padding: 2rem 2rem 4rem;">
+  <div style="max-width: 900px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 2rem;">
+    <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(52,211,153,0.12); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">💡</div>
+      <h3 style="font-size: 1.3rem; font-weight: 700; margin: 0;">What Executives Need to Know</h3>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.9rem; color: var(--text-dim); line-height: 1.7;">
+      <div style="display: flex; gap: 0.8rem;">
+        <div style="color: var(--green); font-weight: 700; flex-shrink: 0;">✓</div>
+        <div><strong style="color: var(--text);">Fully autonomous investigation</strong> — No human intervention needed to start. Alerts fire, agents dispatch automatically, findings post to Teams within minutes.</div>
+      </div>
+      <div style="display: flex; gap: 0.8rem;">
+        <div style="color: var(--green); font-weight: 700; flex-shrink: 0;">✓</div>
+        <div><strong style="color: var(--text);">Read-only enforcement</strong> — Platform CANNOT modify production systems. All MCP tools are strictly read-only. Agents investigate and suggest; humans decide and act.</div>
+      </div>
+      <div style="display: flex; gap: 0.8rem;">
+        <div style="color: var(--green); font-weight: 700; flex-shrink: 0;">✓</div>
+        <div><strong style="color: var(--text);">92% coverage</strong> — 11 alert categories cover 92% of historical incidents. Handles application errors, database issues, performance degradation, infrastructure failures, and security alerts.</div>
+      </div>
+      <div style="display: flex; gap: 0.8rem;">
+        <div style="color: var(--green); font-weight: 700; flex-shrink: 0;">✓</div>
+        <div><strong style="color: var(--text);">Investigative suggestions, not automated actions</strong> — Reports provide ranked hypotheses and suggested mitigations (drain, rollback, restart, scale, isolate, escalate). On-call engineers review and execute.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 8-STAGE PIPELINE -->
+<section style="padding: 3rem 2rem;">
+  <div class="section-label blue">8-Stage Investigation Pipeline</div>
+  <h2>From Alert to Report</h2>
+  <p class="section-desc">
+    Each incident flows through a deterministic 8-stage pipeline. Horizontal flow ensures transparency, checkpointing, and resume-on-failure.
+  </p>
+  <div style="display: flex; align-items: center; gap: 1rem; margin-top: 2.5rem; overflow-x: auto; padding-bottom: 1rem;">
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🔍</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">1. Classifier</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">11-category alert classification</div>
+    </div>
+    <div style="color: var(--border-glow); font-size: 1.2rem; flex-shrink: 0;">→</div>
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📚</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">2. Context</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">Historical + infra context</div>
+    </div>
+    <div style="color: var(--border-glow); font-size: 1.2rem; flex-shrink: 0;">→</div>
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">⚡</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">3. Tier 1</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">9 parallel agents</div>
+    </div>
+    <div style="color: var(--border-glow); font-size: 1.2rem; flex-shrink: 0;">→</div>
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🧠</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">4. Synthesis</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">Top 3 hypotheses</div>
+    </div>
+    <div style="color: var(--border-glow); font-size: 1.2rem; flex-shrink: 0;">→</div>
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">🎯</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">5. Tier 2</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">Conditional dispatch</div>
+    </div>
+    <div style="color: var(--border-glow); font-size: 1.2rem; flex-shrink: 0;">→</div>
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">📝</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">6. Report</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">Structured findings</div>
+    </div>
+    <div style="color: var(--border-glow); font-size: 1.2rem; flex-shrink: 0;">→</div>
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">✅</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">7. Verification</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">Quality check</div>
+    </div>
+    <div style="color: var(--border-glow); font-size: 1.2rem; flex-shrink: 0;">→</div>
+    <div style="flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem; text-align: center;">
+      <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💾</div>
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.3rem;">8. Persistence</div>
+      <div style="font-size: 0.7rem; color: var(--text-muted);">Knowledge base</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- STATS -->
+<section>
+  <div class="stats">
+    <div class="stat blue"><div class="stat-value">16</div><div class="stat-label">Investigation Agents</div></div>
+    <div class="stat green"><div class="stat-value">9</div><div class="stat-label">Tier 1 (Always)</div></div>
+    <div class="stat purple"><div class="stat-value">5</div><div class="stat-label">Tier 2 (Conditional)</div></div>
+    <div class="stat amber"><div class="stat-value">11</div><div class="stat-label">Alert Categories</div></div>
+    <div class="stat cyan"><div class="stat-value">20</div><div class="stat-label">Investigation Rules</div></div>
+    <div class="stat red"><div class="stat-value">~3 min</div><div class="stat-label">Investigation Time</div></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- PROCESS FLOW -->
+<section>
+  <div class="section-label blue">End-to-End Process</div>
+  <h2>Alert to Resolution</h2>
+  <p class="section-desc">
+    From the moment an alert fires to knowledge base storage — every step is automated, auditable, and designed for speed of insight over speed of execution.
+  </p>
+
+  <div class="flow">
+    <div class="flow-line"></div>
+
+    <!-- Step 1: Alert Classification -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--accent);">1</div>
+        <div class="step-time">T+0s</div>
+      </div>
+      <div class="step-content">
+        <h3>Alert Classification</h3>
+        <p class="desc">
+          LLM classifies the incoming alert into 1 of 11 categories (application-errors, sql-database, cloud-infrastructure, performance, deploy-release, auth-security, scheduled-jobs, data-integrity, business-logic, monitoring-meta, pubsub-messaging) and assigns severity (sev1-sev4), service name, GCP project, and environment.
+          Output: structured AlertClassification (Pydantic schema) stored as {classification}.
+        </p>
+        <div class="tags">
+          <span class="tag tag-blue">11 Categories</span>
+          <span class="tag tag-green">Pydantic Schema</span>
+          <span class="tag tag-amber">output_key: classification</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Context Loading (Parallel) -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--cyan);">2</div>
+        <div class="step-time">T+3s</div>
+      </div>
+      <div class="step-content">
+        <h3>Context Loading (Parallel)</h3>
+        <p class="desc">
+          ParallelAgent loads two context sources simultaneously:
+          <br>• <strong>historical_context</strong> — Queries Firestore for similar past incidents (find_similar_incidents) and learned triage steps (get_triage_guidance), with GCS fallback for older incidents.
+          <br>• <strong>infra_context</strong> — Loads service metadata, GCP project mappings, and dependency information from the GCS context/ prefix.
+        </p>
+        <div class="tags">
+          <span class="tag tag-blue">ParallelAgent</span>
+          <span class="tag tag-cyan">Firestore</span>
+          <span class="tag tag-green">GCS Context</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Tier 1 Investigation (Parallel) -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--accent);">3</div>
+        <div class="step-time">T+8s</div>
+      </div>
+      <div class="step-content">
+        <h3>Tier 1 Investigation (Parallel)</h3>
+        <p class="desc">
+          9 deterministic agents dispatched simultaneously via ADK ParallelAgent. Each follows a numbered checklist — no open-ended exploration. Each agent establishes a baseline first (Step 0), then compares current state against normal.
+          <strong>Time budget: 3 minutes.</strong>
+        </p>
+        <div class="agents-grid">
+          <div class="agent-chip"><span class="agent-num">1</span> Cloud Run Health</div>
+          <div class="agent-chip"><span class="agent-num">2</span> Compute Engine Health</div>
+          <div class="agent-chip"><span class="agent-num">3</span> GCP Logging</div>
+          <div class="agent-chip"><span class="agent-num">4</span> GCP Metrics</div>
+          <div class="agent-chip"><span class="agent-num">5</span> Datadog Observability</div>
+          <div class="agent-chip"><span class="agent-num">6</span> Sentry Error</div>
+          <div class="agent-chip"><span class="agent-num">7</span> Deploy Correlation</div>
+          <div class="agent-chip"><span class="agent-num">8</span> Teams Context</div>
+          <div class="agent-chip"><span class="agent-num">9</span> Known Issues</div>
+        </div>
+        <div class="tags" style="margin-top: 1rem;">
+          <span class="tag tag-blue">ParallelAgent</span>
+          <span class="tag tag-amber">3-min Budget</span>
+          <span class="tag tag-cyan">Baseline-First</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Synthesis -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--purple);">4</div>
+        <div class="step-time">T+3min</div>
+      </div>
+      <div class="step-content">
+        <h3>Hypothesis-Driven Synthesis</h3>
+        <p class="desc">
+          Merges findings from all Tier 1 agents. Forms top 3 hypotheses ranked by evidence strength.
+          For each hypothesis: cites supporting evidence, refuting evidence, and what remains unknown.
+          Dispatches Tier 2 agents to TEST the leading hypothesis — not just category-based routing.
+        </p>
+        <div class="tags">
+          <span class="tag tag-purple">Differential Diagnosis</span>
+          <span class="tag tag-purple">Evidence Ranking</span>
+          <span class="tag tag-purple">Targeted Dispatch</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 5: Tier 2 Dispatch -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--purple);">5</div>
+        <div class="step-time">T+4min</div>
+      </div>
+      <div class="step-content">
+        <h3>Tier 2 Dispatch</h3>
+        <p class="desc">
+          Conditional agents dispatched based on hypothesis testing needs and category.
+          Each agent tests a specific aspect of the leading hypothesis.
+          <strong>Time budget: 2 minutes per agent.</strong>
+        </p>
+        <div class="agents-grid">
+          <div class="agent-chip tier2"><span class="agent-num">10</span> Pub/Sub</div>
+          <div class="agent-chip tier2"><span class="agent-num">11</span> Cache</div>
+          <div class="agent-chip tier2"><span class="agent-num">12</span> SQL DBA</div>
+          <div class="agent-chip tier2"><span class="agent-num">13</span> Auth/Security</div>
+          <div class="agent-chip tier2"><span class="agent-num">14</span> Codebase</div>
+        </div>
+        <div class="tags" style="margin-top: 1rem;">
+          <span class="tag tag-purple">Conditional</span>
+          <span class="tag tag-amber">2-min Budget</span>
+          <span class="tag tag-purple">Hypothesis Testing</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 6: Report Generation -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--cyan);">6</div>
+        <div class="step-time">T+5min</div>
+      </div>
+      <div class="step-content">
+        <h3>Report Generation</h3>
+        <p class="desc">
+          Structured Teams-ready report with 6 sections: Executive Summary, Top Hypotheses (ranked by evidence), Suggested Mitigations (drain/rollback/restart/scale/isolate/escalate), Evidence Details, Investigation Timeline, and Next Steps.
+          Confidence levels: STRONG / MODERATE / WEAK / UNKNOWN — never "CONFIRMED".
+        </p>
+        <div class="tags">
+          <span class="tag tag-cyan">6 Sections</span>
+          <span class="tag tag-green">Suggested Mitigations</span>
+          <span class="tag tag-blue">Confidence Levels</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 7: Verification -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--green);">7</div>
+        <div class="step-time">T+5.5min</div>
+      </div>
+      <div class="step-content">
+        <h3>Verification</h3>
+        <p class="desc">
+          Independent quality check using Gemini 2.5 Flash. Scores diagnosis confidence, solution actionability, and investigation efficiency.
+          Automated tier: MEDIUM/LOW/UNRELIABLE (never HIGH without human validation).
+          Flags low-confidence findings before they reach production use.
+        </p>
+        <div class="tags">
+          <span class="tag tag-green">Gemini 2.5 Flash</span>
+          <span class="tag tag-amber">Quality Check</span>
+          <span class="tag tag-blue">Confidence Scoring</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 8: Persistence -->
+    <div class="flow-step">
+      <div class="step-marker">
+        <div class="step-dot" style="background: var(--green);">8</div>
+        <div class="step-time">T+6min</div>
+      </div>
+      <div class="step-content">
+        <h3>Persistence</h3>
+        <p class="desc">
+          Dual-write to GCS and Firestore. Stores complete incident JSON with verification scores, investigation timeline, and all agent findings.
+          GCS: gs://incident-summaries/ for archival.
+          Firestore: incidents collection for fast queries and historical similarity search.
+        </p>
+        <div class="tags">
+          <span class="tag tag-green">GCS Archive</span>
+          <span class="tag tag-cyan">Firestore</span>
+          <span class="tag tag-blue">Dual-Write</span>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SAFETY ARCHITECTURE -->
+<section>
+  <div class="section-label red">Safety Architecture</div>
+  <h2>Five-Layer Defense Model</h2>
+  <p class="section-desc">
+    Adapted from Google's SRE safety architecture. Each layer independently prevents a class of failure. All five must be breached for an unsafe action to occur.
+  </p>
+
+  <div class="safety-stack">
+    <div class="safety-layer">
+      <div class="layer-num" style="background: rgba(79,143,255,0.15); color: var(--accent);">1</div>
+      <div class="layer-info">
+        <h4>Deterministic Tools</h4>
+        <p>Strictly typed MCP tools via Bifrost. Per-server read-only allowlists (Datadog: 5 tools, ADO: 5, Sentry: 4). No arbitrary commands.</p>
+      </div>
+    </div>
+    <div class="safety-layer">
+      <div class="layer-num" style="background: rgba(251,191,36,0.15); color: var(--amber);">2</div>
+      <div class="layer-info">
+        <h4>Token + Time Budgets</h4>
+        <p>Per-agent token limits and time budgets. Agents that exceed 80% must checkpoint. At 100%, force-stop with partial findings.</p>
+      </div>
+    </div>
+    <div class="safety-layer">
+      <div class="layer-num" style="background: rgba(167,139,250,0.15); color: var(--purple);">3</div>
+      <div class="layer-info">
+        <h4>Investigation Rules</h4>
+        <p>20 non-negotiable rules baked into every agent prompt. Including: facts before hypotheses, test hypotheses don't collect data, suggest mitigation don't just diagnose.</p>
+      </div>
+    </div>
+    <div class="safety-layer">
+      <div class="layer-num" style="background: rgba(52,211,153,0.15); color: var(--green);">4</div>
+      <div class="layer-info">
+        <h4>Human-in-the-Loop</h4>
+        <p>Phase 1: L1 Assisted Autonomy. All findings posted to Teams for human review. No automated actions. Engineers direct the investigation.</p>
+      </div>
+    </div>
+    <div class="safety-layer">
+      <div class="layer-num" style="background: rgba(248,113,113,0.15); color: var(--red);">5</div>
+      <div class="layer-info">
+        <h4>Global Emergency Stop</h4>
+        <p>Red Button: <code>/pause</code> endpoint halts all in-flight agents, queues new webhooks. Firestore flag checked before every tool call. Full audit trail.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- AUTONOMY MODEL -->
+<section>
+  <div class="section-label purple">Progressive Trust</div>
+  <h2>Autonomy Level Progression</h2>
+  <p class="section-desc">
+    Adapted from Google's Five-Level SRE AI Autonomy Model. Each level is gated by demonstrated reliability on evaluation data.
+  </p>
+
+  <div class="autonomy-bar">
+    <div class="autonomy-level" style="opacity: 0.5;">
+      <div class="level-label" style="color: var(--text-muted);">L0</div>
+      <div class="level-name">Manual</div>
+      <div class="level-desc">Human does everything</div>
+    </div>
+    <div class="autonomy-level active">
+      <div class="level-label">L1 &mdash; Phase 1</div>
+      <div class="level-name">Assisted</div>
+      <div class="level-desc">Auto-investigate, human reads</div>
+    </div>
+    <div class="autonomy-level future">
+      <div class="level-label">L2 &mdash; Phase 2</div>
+      <div class="level-name">Partial</div>
+      <div class="level-desc">Suggest mitigations, human approves</div>
+    </div>
+    <div class="autonomy-level future">
+      <div class="level-label">L3 &mdash; Phase 3</div>
+      <div class="level-name">High</div>
+      <div class="level-desc">Auto-mitigate with approval gates</div>
+    </div>
+    <div class="autonomy-level future">
+      <div class="level-label">L4 &mdash; Future</div>
+      <div class="level-name">Full</div>
+      <div class="level-desc">End-to-end autonomous</div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem;">
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.8rem;">Progression Gates</h3>
+      <div style="font-size: 0.82rem; color: var(--text-dim); line-height: 1.6;">
+        <div style="margin-bottom: 0.5rem;"><span style="color: var(--accent); font-weight: 600;">L1 &rarr; L2:</span> 50+ incidents processed, &lt;5% false positive rate</div>
+        <div style="margin-bottom: 0.5rem;"><span style="color: var(--purple); font-weight: 600;">L2 &rarr; L3:</span> Suggestion accuracy &gt;80% on 100+ incidents</div>
+        <div><span style="color: var(--amber); font-weight: 600;">L3 &rarr; L4:</span> Mitigation success &gt;95% with safety controls</div>
+      </div>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.8rem;">Dynamic Downgrade</h3>
+      <div style="font-size: 0.82rem; color: var(--text-dim); line-height: 1.6;">
+        Auto-downgrade to lower autonomy when:
+        <ul style="padding-left: 1rem; margin-top: 0.4rem;">
+          <li>Peak traffic detected</li>
+          <li>Multiple active incidents (storm)</li>
+          <li>Agent confidence below threshold</li>
+          <li>Red Button activated</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ARCHITECTURE -->
+<section>
+  <div class="section-label cyan">Architecture</div>
+  <h2>Platform Components</h2>
+  <p class="section-desc">
+    Cloud Run hosted, ADK orchestrated, Bifrost routed. Designed for isolation (one container per incident) and resilience (checkpoint + resume on restart).
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); margin-bottom: 0.5rem;">Ingestion</div>
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Alert Input</h3>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Alerts submitted via ADK web UI or Agent Engine API. Webhook frontend (FastAPI on Cloud Run) is planned for Phase 2.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;">Orchestration</div>
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem;">ADK 2.2.0 Orchestrator</h3>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">LlmAgent via Vertex AI Agent Engine. 8-stage pipeline: classifier → context_parallel → tier1_parallel (9 agents) → synthesis → tier2_dispatcher → report → verification → persistence. Model: claude-sonnet-4-6 via LiteLlm.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 0.5rem;">LLM Routing</div>
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Bifrost Gateway</h3>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Semantic cache. Virtual keys + budget. MCP server aggregation. Per-server read-only tool allowlists. Shared singleton McpToolset with response truncation (4000 char limit).</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); margin-bottom: 0.5rem;">Data Layer</div>
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Firestore Collections</h3>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Native mode, us-central1, aiops-dev-project. Collections: incidents, decision_trees. Compound queries for structured search. Transactions for dedup and state.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); margin-bottom: 0.5rem;">Interface</div>
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Teams Bot</h3>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Planned for Phase 2. Currently, reports are generated but not auto-posted to Teams.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-bottom: 0.5rem;">Messaging</div>
+      <h3 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Pub/Sub</h3>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Planned for Phase 2. Pub/Sub topic will decouple webhook frontend from investigation lifecycle.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- GOOGLE PRINCIPLES -->
+<section>
+  <div class="section-label green">Informed By</div>
+  <h2>Google SRE AI Principles Adopted</h2>
+  <p class="section-desc">
+    Key principles from Google's SRE AI engineering practices that shaped this platform's design.
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;">
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+        <div style="width: 24px; height: 24px; border-radius: 6px; background: rgba(248,113,113,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--red);">1</div>
+        <h4 style="font-size: 0.88rem;">Mitigation-First</h4>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Every finding includes a suggested Generic Mitigation (drain, rollback, restart, scale, isolate, escalate). Diagnose AND prescribe.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+        <div style="width: 24px; height: 24px; border-radius: 6px; background: rgba(79,143,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--accent);">2</div>
+        <h4 style="font-size: 0.88rem;">Bounded Action Space</h4>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Agents follow numbered checklists with typed MCP tools. No open-ended exploration. Each step tests a specific hypothesis.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+        <div style="width: 24px; height: 24px; border-radius: 6px; background: rgba(52,211,153,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--green);">3</div>
+        <h4 style="font-size: 0.88rem;">Progressive Trust</h4>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">L1 → L2 → L3 → L4 autonomy levels. Each gate requires demonstrated reliability on evaluation data. Dynamic downgrade on elevated risk.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+        <div style="width: 24px; height: 24px; border-radius: 6px; background: rgba(167,139,250,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--purple);">4</div>
+        <h4 style="font-size: 0.88rem;">Insight Speed > Execution Speed</h4>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Surface the most important signal first. Don't wait for all agents. Incremental findings posted to Teams as they arrive (Rule 8).</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+        <div style="width: 24px; height: 24px; border-radius: 6px; background: rgba(251,191,36,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--amber);">5</div>
+        <h4 style="font-size: 0.88rem;">Virtuous Loop</h4>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Every resolved incident feeds the knowledge base. Embedded golden data collection: responders rate each finding's accuracy. Postmortems become training data.</p>
+    </div>
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.2rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+        <div style="width: 24px; height: 24px; border-radius: 6px; background: rgba(34,211,238,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: var(--cyan);">6</div>
+        <h4 style="font-size: 0.88rem;">Chain-of-Thought Transparency</h4>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-dim);">Full audit trail: every tool call, hypothesis considered, evidence for/against, confidence rationale. Stored in Firestore incident records for debugging and evaluation.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DOCUMENTATION HUB -->
+<section>
+  <div class="section-label amber">Documentation</div>
+  <h2>Project Documentation</h2>
+  <p class="section-desc">
+    All planning artifacts, architecture diagrams, and analysis documents for the Incident Response Agent platform.
+  </p>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+
+    <!-- Planning & Analysis -->
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin-bottom: 1rem;">Planning & Analysis</div>
+      <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+        <a href="plan.md" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(79,143,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">📋</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Master Project Plan</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Architecture, agent roster, tool inventory, data model, 6-phase implementation</div>
+          </div>
+        </a>
+        <a href="google-sre-analysis.md" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(52,211,153,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🔬</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Google SRE Analysis</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">25 principles, 11 gap recommendations, 5 new rules, priority matrix</div>
+          </div>
+        </a>
+        <a href="pitch.html" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(251,191,36,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🎯</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Project Pitch</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Executive summary and value proposition</div>
+          </div>
+        </a>
+        <a href="ado-work-breakdown.html" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(167,139,250,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">📊</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">ADO Work Breakdown</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Epic structure, features, user stories, and dependencies</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Decision Logic -->
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); margin-bottom: 1rem;">Decision Logic</div>
+      <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+        <a href="decision-trees.html" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(167,139,250,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🌳</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Decision Trees</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Agent dispatch logic, tier routing, investigation flow</div>
+          </div>
+        </a>
+        <a href="classification-trees.html" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(248,113,113,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🏷️</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Classification Trees</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">11-category alert classification logic</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Architecture Diagrams -->
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+      <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); margin-bottom: 1rem;">Architecture Diagrams</div>
+      <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+        <a href="01-system-overview.png" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(34,211,238,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🗺️</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">System Overview</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">High-level platform architecture</div>
+          </div>
+        </a>
+        <a href="02-alert-dedup-flow.png" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(251,191,36,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🔀</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Alert Deduplication Flow</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Two-pass dedup pipeline (future)</div>
+          </div>
+        </a>
+        <a href="03-investigation-workflow.png" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(79,143,255,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🔍</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Investigation Workflow</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Tier 1 → Synthesis → Tier 2 agent flow</div>
+          </div>
+        </a>
+        <a href="04-data-model.png" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(52,211,153,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🗄️</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Data Model</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Firestore collections (incidents, decision_trees)</div>
+          </div>
+        </a>
+        <a href="05-routing-decision-tree.png" style="display: flex; align-items: center; gap: 0.8rem; text-decoration: none; color: var(--text); padding: 0.6rem; border-radius: 8px; background: var(--surface2); transition: background 0.2s;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(248,113,113,0.12); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;">🔄</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 600;">Routing Decision Tree</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Category → agent dispatch mapping</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <p>Incident Response Agent Platform &mdash; acme SRE</p>
+  <p style="margin-top: 0.4rem;">
+    ADK 2.2.0 | claude-sonnet-4-6 via Vertex AI Agent Engine | 16 agents | 11 categories
+  </p>
+  <p style="margin-top: 0.4rem;">
+    Informed by <a href="https://cloud.google.com/blog/topics/developers-practitioners/how-google-sres-use-gemini-cli-to-solve-real-world-outages" target="_blank">Google SRE + Gemini CLI</a>
+    and <a href="https://sre.google/resources/practices-and-processes/ai-engineering-reliable-operations/" target="_blank">AI Engineering for Reliable Operations</a>
+  </p>
+  <p style="margin-top: 0.8rem; font-size: 0.7rem; opacity: 0.6;">Last Updated: June 2026 | Version 2.1</p>
+</footer>
+
+</body>
+</html>

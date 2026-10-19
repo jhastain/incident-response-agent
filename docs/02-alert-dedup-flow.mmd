@@ -1,0 +1,28 @@
+%% PLANNED — NOT YET IMPLEMENTED
+%% This diagram describes the planned dedup pipeline for a future phase.
+%% Phase 1 does not include dedup — alerts are processed individually.
+%% When implemented, AlloyDB references below will use Firestore instead.
+
+flowchart LR
+    subgraph "Pass 0: Self-Exclusion"
+        A0[Alert arrives\nsanitized] --> A0Check{Source service\nmatches aiops-*-run-ir-*?}
+        A0Check -->|Yes| A0Log[Log + discard\nno investigation]
+        A0Check -->|No| A[Continue to dedup]
+    end
+
+    subgraph "Pass 1: Fast Dedup (Firestore)"
+        A --> B{Query Firestore\nsame service +\nalert type within\n5-min window?}
+        B -->|Yes| C[Merge into\nexisting incident]
+        B -->|No| D[Pass 2]
+    end
+
+    subgraph "Pass 2: Semantic Dedup (future)"
+        D --> E[Embed alert\nvia Vertex AI]
+        E --> F{Vector similarity > 0.85\nvs active incidents?\n(Vertex AI Vector Search)}
+        F -->|Yes| G[Merge — flag\nas correlated]
+        F -->|No| H[New incident\n→ start investigation]
+    end
+
+    C --> I[Update existing\ninvestigation state]
+    G --> I
+    H --> J[Agent Engine\nnew session]

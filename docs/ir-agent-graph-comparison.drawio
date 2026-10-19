@@ -1,0 +1,236 @@
+<mxfile host="app.diagrams.net" modified="2026-08-26T00:00:00.000Z" agent="claude-code" version="24.7.17" type="device">
+  <diagram name="Today vs Graph Workflow" id="ir-graph-compare">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="IR Agent: Today (ADK SequentialAgent) vs ADK Graph Workflow" style="text;html=1;fontSize=22;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="350" y="16" width="1000" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="Same 9 Tier-1 agents, same models, same tools. Only the wiring changes. Verified 2026-08-26 against app/agent.py, app/tier1_routing.py, app/sub_agents/tier1/parallel.py, google.adk.workflow (installed 2.5.0, matches the uv.lock pin)." style="text;html=1;fontSize=11;align=center;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="250" y="46" width="1200" height="20" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lpanel" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdf6f6;strokeColor=#c0392b;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="60" y="90" width="740" height="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="lhead" value="TODAY - SequentialAgent + callback gating" style="text;html=1;fontSize=16;fontStyle=1;align=center;fontColor=#c0392b;" vertex="1" parent="1">
+          <mxGeometry x="80" y="102" width="700" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="lsub" value="Routing lives in Python callbacks and prompt text. Skipped work still occupies a slot and leaves a sentinel string." style="text;html=1;fontSize=10;align=center;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="80" y="126" width="700" height="16" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l1" value="alert_classifier&#10;(LlmAgent)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="330" y="155" width="200" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="l2" value="infra_context&#10;(LlmAgent)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="330" y="217" width="200" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="l3" value="tree_router (custom BaseAgent, code only)&#10;Firestore read -&gt; tier1_plan dict, ~0.39s" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="300" y="279" width="260" height="78" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lbar" value="ParallelAgent  tier1_with_history" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;verticalAlign=top;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="90" y="380" width="680" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="lhist" value="historical_context" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="105" y="410" width="140" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1box" value="tier1_parallel - ALL 9 always instantiated" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;verticalAlign=top;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="260" y="410" width="495" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1a" value="sentry_error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="272" y="435" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1b" value="gcp_logging" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="432" y="435" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1c" value="datadog_observability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="592" y="435" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1d" value="deploy_correlation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="272" y="472" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1e" value="cloud_run_health" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="432" y="472" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1f" value="known_issues" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="592" y="472" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1g" value="gcp_metrics&#10;SKIPPED -&gt; sentinel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="272" y="509" width="150" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1h" value="teams_context&#10;SKIPPED -&gt; sentinel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="432" y="509" width="150" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1i" value="compute_engine_health&#10;SKIPPED -&gt; sentinel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="592" y="509" width="150" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="lt1note" value="before_agent_callback reads tier1_plan and returns Content to skip.&#10;A skipped agent still costs a scheduling slot and writes a &quot;NOT RUN --&quot; string that every downstream prompt must be taught to read." style="text;html=1;fontSize=9;align=center;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="265" y="550" width="485" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="l4" value="synthesis (LlmAgent, re-query tools)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="630" width="260" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="l5" value="tier2_dispatcher (LlmAgent)&#10;an LLM reads a matrix in its PROMPT and chooses AgentTools" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="280" y="690" width="300" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="l5n" value="Routing decision made by a model. The prompt has to say &quot;strict matrix obedience&quot; and warn about wasting the time budget." style="text;html=1;fontSize=9;align=center;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="240" y="742" width="380" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="l6" value="report (LlmAgent)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="330" y="782" width="200" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="l7" value="verification (LlmAgent, scores the run)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="310" y="840" width="240" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="l8" value="persistence (GCS + Firestore)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="310" y="898" width="240" height="38" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lfail" value="FAILURE MODE:  any node throws, or the ~600s streamQuery deadline hits  =&gt;  the whole run is lost, restart from the alert.&#10;No per-node retry. No per-node timeout. No resume." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="100" y="955" width="660" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="lloop" value="LEARNING LOOP: persistence -&gt; Firestore incidents -&gt; decision_tree_learning scores hit_rate -&gt; decision_trees/&lt;category&gt; -&gt; next run&apos;s tree_router. Unchanged by either design." style="text;html=1;fontSize=9;align=center;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="100" y="1015" width="660" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="le1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="l1" target="l2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le2" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="l2" target="l3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le3" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="l3" target="lbar"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le4" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="lbar" target="l4"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le5" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="l4" target="l5"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le6" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="l5" target="l6"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le7" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="l6" target="l7"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="le8" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="l7" target="l8"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+        <mxCell id="rpanel" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f4faf4;strokeColor=#2e7d32;dashed=0;" vertex="1" parent="1">
+          <mxGeometry x="840" y="90" width="800" height="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="rhead" value="GRAPH WORKFLOW - google.adk.workflow.Workflow" style="text;html=1;fontSize=16;fontStyle=1;align=center;fontColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="860" y="102" width="760" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="rsub" value="Routing is a declared edge map. A node that is not on the route never exists for that run - no slot, no sentinel." style="text;html=1;fontSize=10;align=center;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="860" y="126" width="760" height="16" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rstart" value="START" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1170" y="152" width="90" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" value="AgentNode: alert_classifier&#10;output_schema=Classification (typed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="200" width="250" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" value="AgentNode: infra_context&#10;retry_config + timeout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="256" width="250" height="42" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" value="FunctionNode: tree_router&#10;returns Event(route=[selected agents])" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1065" y="314" width="300" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rfan" value="the edge map fans out ONLY the routed nodes" style="text;html=1;fontSize=10;align=center;fontStyle=2;fontColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="1065" y="400" width="300" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="rt1box" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="865" y="422" width="750" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="rh" value="historical_context" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="878" y="440" width="140" height="115" as="geometry" />
+        </mxCell>
+        <mxCell id="ra" value="sentry_error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1032" y="440" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="rb" value="gcp_logging" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1182" y="440" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="rc" value="datadog_observability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1332" y="440" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="rd" value="deploy_correlation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1032" y="478" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="re" value="cloud_run_health" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1182" y="478" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="rf" value="known_issues" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1332" y="478" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="rg" value="3 unrouted nodes (gcp_metrics, teams_context, compute_engine)&#10;NOT ON THE GRAPH THIS RUN - no slot, no sentinel string" style="text;html=1;fontSize=9;align=center;fontColor=#2e7d32;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1032" y="516" width="440" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="rretry" value="every node carries: retry_config (max_attempts, backoff, jitter) + timeout" style="text;html=1;fontSize=9;align=center;fontColor=#2e7d32;" vertex="1" parent="1">
+          <mxGeometry x="878" y="548" width="720" height="18" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rjoin" value="JoinNode - waits for every routed branch&#10;WARNING: a branch that emits no Event wedges the join. Needs a failsafe output." style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1065" y="588" width="300" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="r4" value="AgentNode: synthesis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="654" width="200" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="r5" value="FunctionNode: tier2_router&#10;the matrix is CODE, returns Event(route=...) - no LLM, no prompt to disobey" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1055" y="708" width="320" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r5a" value="pubsub" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="890" y="800" width="105" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="r5b" value="cache" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1005" y="800" width="105" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="r5c" value="sql_dba" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="800" width="105" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="r5d" value="auth_security" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1235" y="800" width="105" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="r5e" value="codebase" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="800" width="105" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="rjoin2" value="JoinNode" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1145" y="840" width="140" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="r6" value="AgentNode: report" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="884" width="200" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="r7" value="AgentNode: verification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="1115" y="930" width="200" height="34" as="geometry" />
+        </mxCell>
+        <mxCell id="rback" value="optional back-edge: score too low -&gt; re-run synthesis&#10;(cycles are legal in a graph; impossible in SequentialAgent)" style="text;html=1;fontSize=9;align=left;fontColor=#2e7d32;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="1440" y="920" width="190" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="r8" value="FunctionNode: persistence (GCS + Firestore)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1095" y="976" width="240" height="34" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rfail" value="FAILURE MODE:  a node fails -&gt; retry_config retries THAT node.  Deadline hit -&gt; resume skips already-completed nodes (dynamic workflows).&#10;OPEN RISK: google.adk.workflow.Workflow is a BaseNode, NOT a BaseAgent - Agent Engine compatibility unverified. Installed ADK is 2.5.0, matching the uv.lock pin." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="865" y="1026" width="750" height="52" as="geometry" />
+        </mxCell>
+
+        <mxCell id="rce0" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="rstart" target="r1"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="r1" target="r2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce2" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="r2" target="r3"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce3" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2e7d32;" edge="1" parent="1" source="r3" target="rh"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce4" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2e7d32;" edge="1" parent="1" source="r3" target="ra"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce5" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2e7d32;" edge="1" parent="1" source="r3" target="rb"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce6" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2e7d32;" edge="1" parent="1" source="r3" target="rc"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce7" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="rt1box" target="rjoin"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce8" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="rjoin" target="r4"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce9" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="r4" target="r5"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce10" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2e7d32;" edge="1" parent="1" source="r5" target="r5b"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce11" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2e7d32;" edge="1" parent="1" source="r5" target="r5d"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce12" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="r5b" target="rjoin2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce13" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#666666;dashed=1;" edge="1" parent="1" source="r5d" target="rjoin2"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce14" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="rjoin2" target="r6"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce15" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="r6" target="r7"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce16" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#333333;" edge="1" parent="1" source="r7" target="r8"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="rce17" value="back-edge" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#2e7d32;dashed=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="r7" target="r4"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="1410" y="947" /><mxPoint x="1410" y="673" /></Array></mxGeometry></mxCell>
+
+        <mxCell id="verdict" value="BOTTOM LINE: same speed (same LLM calls), small accuracy gain (typed handoffs, code-not-prompt routing), real structural gain (retry / timeout / resume / cycles). Not a rewrite - an incremental rewire." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8eaf6;strokeColor=#3f51b5;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1130" width="1580" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

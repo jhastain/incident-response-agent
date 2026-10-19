@@ -1,0 +1,117 @@
+name: IncidentResponse-Deploy
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - incident_response_agent/**
+
+pool: terraform-builds
+
+stages:
+  # =============================================================================
+  # INCIDENT RESPONSE AGENT ENGINE - TEST DEPLOYMENT STAGE
+  # =============================================================================
+  - stage: IncidentResponseAgentDeployTestStage
+    displayName: "Incident Response Agent Engine: Test Deploy"
+    pool: terraform-builds
+    variables:
+      envId: "test"
+      gcpProject: "aiops-test-project"
+      gcpRegion: "us-central1"
+      serviceAccount: "ir-agent-sa@aiops-test-project.iam.gserviceaccount.com"
+      agentDir: "incident_response_agent"
+    jobs:
+      - job: DeployIncidentResponseAgentTest
+        displayName: "Deploy IR Agent to Test"
+        steps:
+          - checkout: self
+
+          - bash: |
+              set -euo pipefail
+              echo "=== Installing deployment CLI (google-agents-cli) ==="
+              pip install --quiet google-agents-cli
+              agents-cli --version
+            displayName: "Install google-agents-cli"
+
+          - bash: |
+              set -euo pipefail
+              cd "$(agentDir)"
+
+              echo "=== Deploying Incident Response Agent to $(gcpProject) ==="
+
+              SECRETS="BIFROST_API_TOKEN=incident-response-agent-bfvk:latest,IR_AGENT_ADO_READONLY=ir-agent-ado-readonly:latest,IR_AGENT_OCTOPUS_TASK_WATCHER=ir-agent-octopus-task-watcher:latest,DD_API_KEY=ir-agent-datadog-api-key:latest,BIFROST_LOGS_API_KEY=ir-agent-gateway-logs-read-key:latest"
+
+              ENV_VARS="GCP_MCP_ENABLED=false,DD_ENV=$(envId),BIFROST_MCP_URL=https://llm-gateway-test.internal.example/mcp,BIFROST_LLM_URL=https://llm-gateway-test.internal.example/v1,AGENT_VERSION=0.1.0,GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_LOCATION=global,GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY=true,OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=NO_CONTENT,ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false,DD_LLMOBS_ENABLED=true,DD_SITE=us5.datadoghq.com,DD_SERVICE=ir-agent,DD_LLMOBS_ML_APP=ir-agent,DD_TRACE_PARTIAL_FLUSH_ENABLED=false,DD_TRACE_GOOGLE_ADK_ENABLED=false"
+
+              agents-cli deploy \
+                --deployment-target agent_runtime \
+                --project "$(gcpProject)" \
+                --region "$(gcpRegion)" \
+                --no-confirm-project \
+                --service-account "$(serviceAccount)" \
+                --cpu 4 \
+                --memory 4Gi \
+                --concurrency 9 \
+                --secrets "$SECRETS" \
+                --update-env-vars "$ENV_VARS"
+
+              echo "Incident Response Agent deployed successfully to $(gcpProject)"
+            displayName: "Deploy IR Agent Engine to $(envId)"
+
+  # =============================================================================
+  # PAGERDUTY WEBHOOK RECEIVER - TEST DEPLOYMENT STAGE
+  # =============================================================================
+  - stage: PagerDutyReceiverDeployTestStage
+    displayName: "PagerDuty Webhook Receiver: Test Deploy"
+    dependsOn: IncidentResponseAgentDeployTestStage
+    condition: succeeded()
+    pool: terraform-builds
+    variables:
+      envId: "test"
+      gcpProject: "aiops-test-project"
+      gcpRegion: "us-central1"
+      serviceName: "ir-pagerduty-receiver"
+      serviceAccount: "ir-pd-receiver-sa@aiops-test-project.iam.gserviceaccount.com"
+      agentDisplayName: "incident_response_agent"
+    jobs:
+      - job: DeployPagerDutyReceiverTest
+        displayName: "Deploy PagerDuty Receiver to Test"
+        steps:
+          - checkout: self
+
+          - bash: |
+              set -euo pipefail
+
+              echo "=== Resolving Agent Engine ID in $(gcpProject) ==="
+              PROJECT_NUMBER=$(gcloud projects describe "$(gcpProject)" --format='value(projectNumber)')
+
+              ENGINE_ID=$(gcloud auth print-access-token | xargs -I {} curl -s \
+                -H "Authorization: Bearer {}" \
+                "https://$(gcpRegion)-aiplatform.googleapis.com/v1/projects/${PROJECT_NUMBER}/locations/$(gcpRegion)/reasoningEngines" \
+                | python3 -c "import sys, json; engines = json.load(sys.stdin).get('reasoningEngines', []); matches = [e['name'] for e in engines if e.get('displayName') == '$(agentDisplayName)']; print(matches[0] if matches else '')")
+
+              if [[ -z "$ENGINE_ID" ]]; then
+                echo "ERROR: No reasoning engine found with displayName '$(agentDisplayName)' in $(gcpProject)"
+                exit 1
+              fi
+
+              echo "Found Agent Engine: ${ENGINE_ID}"
+              ENGINE_URL="https://$(gcpRegion)-aiplatform.googleapis.com/v1beta1/${ENGINE_ID}"
+
+              echo "=== Deploying $(serviceName) to Cloud Run ==="
+              gcloud run deploy "$(serviceName)" \
+                --source incident_response_agent/integrations/pagerduty \
+                --project "$(gcpProject)" \
+                --region "$(gcpRegion)" \
+                --service-account "$(serviceAccount)" \
+                --allow-unauthenticated \
+                --min-instances 1 \
+                --no-cpu-throttling \
+                --set-env-vars "IR_AGENT_ENGINE_URL=${ENGINE_URL}" \
+                --set-secrets "PD_WEBHOOK_SECRET=pagerduty-webhook-signing-secret:latest,PD_REST_API_TOKEN=pagerduty-rest-api-token:latest,PD_FROM_EMAIL=pagerduty-from-email:latest"
+
+              echo "PagerDuty Webhook Receiver deployed successfully to $(gcpProject)"
+            displayName: "Deploy PagerDuty Receiver to Cloud Run"

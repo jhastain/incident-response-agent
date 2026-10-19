@@ -1,0 +1,35 @@
+{
+  "scenario_id": "cloud-infrastructure-startup-probe",
+  "category": "cloud-infrastructure",
+  "severity": "sev3",
+  "service": "jobs-recurring",
+  "environment": "test",
+  "gcp_project": "acme-prodtest-100001",
+  "root_cause_summary": "A deploy step stalled because the recurring-jobs Cloud Run revision failed its startup probe: the new image raised the warm-up allocation above the revision's memory limit, so the container was killed before the probe's first success and emitted no logs.",
+  "root_cause_confidence": "likely",
+  "tier2_agents_expected": [],
+  "key_findings": [
+    "Startup probe timed out after 4m20s; the previous deploy of the same service passed in 20s with an identical probe config",
+    "HealthCheckContainerError with zero container logs, consistent with an OOM kill before the application logger initialises",
+    "Only the recurring-jobs service was affected; 7 of 8 services healthy",
+    "Memory limit unchanged across the two revisions while the image grew"
+  ],
+  "tags": [
+    "cloud-run",
+    "startup-probe",
+    "probe-timeout",
+    "memory-limit",
+    "revision-rollout",
+    "container-exit",
+    "silent-container",
+    "deploy-stall",
+    "image-size-growth"
+  ],
+  "telemetry_baseline": {
+    "total_tokens": 180000,
+    "total_tool_uses": 70,
+    "agents_dispatched": 5,
+    "agents_completed": 5,
+    "agents_skipped": 4
+  }
+}

@@ -1,0 +1,118 @@
+flowchart TD
+    Start([Alert Arrives]) --> ClassAgent[Classification Agent]
+
+    ClassAgent --> |Categorize| Decision{Alert Category}
+
+    Decision -->|application-errors| Cat1[application-errors]
+    Decision -->|business-logic| Cat2[business-logic]
+    Decision -->|deploy-release| Cat3[deploy-release]
+    Decision -->|scheduled-jobs| Cat4[scheduled-jobs]
+    Decision -->|data-integrity| Cat5[data-integrity]
+    Decision -->|cloud-infrastructure| Cat6[cloud-infrastructure]
+    Decision -->|sql-database| Cat7[sql-database]
+    Decision -->|auth-security| Cat8[auth-security]
+    Decision -->|performance| Cat9[performance]
+    Decision -->|monitoring-meta| Cat10[monitoring-meta]
+    Decision -->|pubsub-messaging| Cat11[pubsub-messaging]
+
+    Cat1 --> Tier1
+    Cat2 --> Tier1
+    Cat3 --> Tier1
+    Cat4 --> Tier1
+    Cat5 --> Tier1
+    Cat6 --> Tier1
+    Cat7 --> Tier1
+    Cat8 --> Tier1
+    Cat9 --> Tier1
+    Cat10 --> Tier1
+    Cat11 --> Tier1
+
+    subgraph Tier1[Tier 1 - Always Parallel 8 Agents]
+        CloudRun[Cloud Run Health]
+        GCPLog[GCP Logging]
+        GCPMetrics[GCP Metrics]
+        Datadog[Datadog Observability]
+        Sentry[Sentry Error]
+        DeployCorr[Deploy Correlation]
+        Teams[Teams Context]
+        KnownIssues[Known Issues]
+    end
+
+    Tier1 --> Synthesis[Synthesis Agent]
+
+    Synthesis --> |Category-specific routing| Tier2Decision{Tier 2 Dispatch Logic}
+
+    Tier2Decision -->|application-errors| AppErrorTier2{Root cause unclear?}
+    AppErrorTier2 -->|Yes| CodebaseApp[Codebase Agent]
+    AppErrorTier2 -->|No| SkipTier2App[Skip Tier 2]
+
+    Tier2Decision -->|business-logic| CodebaseBiz[Codebase Agent]
+
+    Tier2Decision -->|deploy-release| SkipTier2Deploy[Skip Tier 2]
+
+    Tier2Decision -->|scheduled-jobs| JobsTier2{Job signals}
+    JobsTier2 -->|Uses PubSub| PubSubJobs[Pub/Sub Agent]
+    JobsTier2 -->|Touches DB| SQLJobs[SQL DBA Agent]
+    JobsTier2 -->|Both| BothJobs[Pub/Sub + SQL DBA]
+    JobsTier2 -->|Neither| SkipTier2Jobs[Skip Tier 2]
+
+    Tier2Decision -->|data-integrity| DataTier2[SQL DBA + Codebase]
+
+    Tier2Decision -->|cloud-infrastructure| InfraTier2{Infrastructure signals}
+    InfraTier2 -->|Redis/Valkey| CacheInfra[Cache Agent]
+    InfraTier2 -->|PubSub| PubSubInfra[Pub/Sub Agent]
+    InfraTier2 -->|Both| BothInfra[Cache + Pub/Sub]
+    InfraTier2 -->|Neither| SkipTier2Infra[Skip Tier 2]
+
+    Tier2Decision -->|sql-database| SQLTier2[SQL DBA Mandatory]
+    SQLTier2 --> SQLExtra{Query source needed?}
+    SQLExtra -->|Yes| SQLCodebase[+ Codebase Agent]
+    SQLExtra -->|No| SQLOnly[SQL DBA only]
+
+    Tier2Decision -->|auth-security| AuthTier2[Auth/Security Agent Mandatory]
+
+    Tier2Decision -->|performance| PerfTier2{Performance signals}
+    PerfTier2 -->|DB signals| SQLPerf[SQL DBA Agent]
+    PerfTier2 -->|Cache signals| CachePerf[Cache Agent]
+    PerfTier2 -->|Both| BothPerf[SQL DBA + Cache]
+    PerfTier2 -->|Neither| SkipTier2Perf[Skip Tier 2]
+
+    Tier2Decision -->|monitoring-meta| SkipTier2Monitor[Skip Tier 2]
+
+    Tier2Decision -->|pubsub-messaging| PubSubTier2[Pub/Sub Agent Mandatory]
+
+    CodebaseApp --> FinalSynthesis
+    SkipTier2App --> FinalSynthesis
+    CodebaseBiz --> FinalSynthesis
+    SkipTier2Deploy --> FinalSynthesis
+    PubSubJobs --> FinalSynthesis
+    SQLJobs --> FinalSynthesis
+    BothJobs --> FinalSynthesis
+    SkipTier2Jobs --> FinalSynthesis
+    DataTier2 --> FinalSynthesis
+    CacheInfra --> FinalSynthesis
+    PubSubInfra --> FinalSynthesis
+    BothInfra --> FinalSynthesis
+    SkipTier2Infra --> FinalSynthesis
+    SQLCodebase --> FinalSynthesis
+    SQLOnly --> FinalSynthesis
+    AuthTier2 --> FinalSynthesis
+    SQLPerf --> FinalSynthesis
+    CachePerf --> FinalSynthesis
+    BothPerf --> FinalSynthesis
+    SkipTier2Perf --> FinalSynthesis
+    SkipTier2Monitor --> FinalSynthesis
+    PubSubTier2 --> FinalSynthesis
+
+    FinalSynthesis[Final Synthesis Agent] --> Report[Generate Report]
+    Report --> TeamsPost[Post to Teams]
+    TeamsPost --> End([Complete])
+
+    style Start fill:#e1f5e1
+    style End fill:#e1f5e1
+    style ClassAgent fill:#fff4e6
+    style Synthesis fill:#fff4e6
+    style FinalSynthesis fill:#fff4e6
+    style Tier1 fill:#e3f2fd
+    style Decision fill:#fce4ec
+    style Tier2Decision fill:#fce4ec

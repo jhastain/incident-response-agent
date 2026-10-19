@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IR Agent Platform — ADO Work Breakdown</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232735;
+    --border: #2e3348;
+    --text: #e2e4eb;
+    --text-muted: #8b8fa3;
+    --accent: #6c8aff;
+    --accent2: #38bdf8;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --sre: #34d399;
+    --dba: #a78bfa;
+    --ce: #38bdf8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* -- NAV -- */
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    background: rgba(15,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; height: 56px;
+  }
+  nav .logo { font-weight: 700; font-size: 1rem; color: var(--accent); letter-spacing: -0.02em; }
+  nav .links { margin-left: auto; display: flex; gap: 1.5rem; }
+  nav .links a {
+    color: var(--text-muted); text-decoration: none; font-size: 0.82rem;
+    font-weight: 500; transition: color 0.2s;
+  }
+  nav .links a:hover { color: var(--text); }
+
+  /* -- HERO -- */
+  .hero {
+    min-height: 50vh; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center;
+    padding: 7rem 2rem 3rem;
+    background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(108,138,255,0.12) 0%, transparent 70%);
+  }
+  .hero .badge {
+    display: inline-block; padding: 0.3rem 0.9rem; border-radius: 99px;
+    background: rgba(108,138,255,0.12); border: 1px solid rgba(108,138,255,0.25);
+    color: var(--accent); font-size: 0.78rem; font-weight: 600; margin-bottom: 1.5rem;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 4.5vw, 3.2rem); font-weight: 800;
+    letter-spacing: -0.03em; line-height: 1.15; max-width: 800px;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    margin-top: 1rem; font-size: 1.05rem; color: var(--text-muted);
+    max-width: 640px; line-height: 1.7;
+  }
+
+  /* -- SECTIONS -- */
+  section { padding: 4rem 2rem; max-width: 1200px; margin: 0 auto; }
+  section.wide { max-width: 1400px; }
+  .section-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;
+  }
+  h2 {
+    font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em;
+    margin-bottom: 0.6rem;
+  }
+  h3 {
+    font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 2rem; max-width: 700px; }
+
+  /* -- STAT CARDS -- */
+  .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2.5rem; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.3rem; text-align: center;
+  }
+  .stat .number {
+    font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat .number.green {
+    background: linear-gradient(135deg, var(--green) 0%, #10b981 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat .number.amber {
+    background: linear-gradient(135deg, var(--amber) 0%, #f59e0b 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat .number.purple {
+    background: linear-gradient(135deg, var(--purple) 0%, #8b5cf6 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat .number.cyan {
+    background: linear-gradient(135deg, var(--accent2) 0%, #0ea5e9 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat .label { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; font-weight: 500; }
+
+  /* -- ROLE TAGS -- */
+  .role-tag {
+    display: inline-block; padding: 0.15rem 0.55rem; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em;
+  }
+  .role-sre { background: rgba(52,211,153,0.15); color: var(--sre); }
+  .role-dba { background: rgba(167,139,250,0.15); color: var(--dba); }
+  .role-ce  { background: rgba(56,189,248,0.15); color: var(--ce); }
+
+  /* -- SP BADGE -- */
+  .sp-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px;
+    font-size: 0.78rem; font-weight: 700;
+    background: rgba(108,138,255,0.12); color: var(--accent);
+    flex-shrink: 0;
+  }
+  .sp-badge.warn {
+    background: rgba(248,113,113,0.15); color: var(--red);
+  }
+
+  /* -- TABLES -- */
+  table {
+    width: 100%; border-collapse: collapse; font-size: 0.85rem;
+    background: var(--surface); border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  thead { background: var(--surface2); }
+  th {
+    text-align: left; padding: 0.7rem 0.9rem;
+    font-weight: 600; font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted); border-bottom: 1px solid var(--border);
+  }
+  td { padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: rgba(108,138,255,0.04); }
+
+  /* -- PHASE HEADER -- */
+  .phase-header {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .phase-header .phase-num {
+    font-size: 2.5rem; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+  .phase-header .phase-info { flex: 1; }
+  .phase-header .phase-info h3 { font-size: 1.3rem; margin-bottom: 0.2rem; }
+  .phase-header .phase-info p { font-size: 0.88rem; color: var(--text-muted); margin: 0; }
+  .phase-header .phase-stats {
+    display: flex; gap: 1rem; align-items: center;
+  }
+  .phase-header .phase-stat {
+    text-align: center;
+  }
+  .phase-header .phase-stat .val {
+    font-size: 1.5rem; font-weight: 700; color: var(--accent);
+  }
+  .phase-header .phase-stat .lbl {
+    font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  /* -- ROLE GROUP -- */
+  .role-group {
+    margin-bottom: 1.5rem;
+  }
+  .role-group-header {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600; font-size: 0.85rem;
+  }
+  .role-group-header.sre { background: rgba(52,211,153,0.08); border-left: 3px solid var(--sre); }
+  .role-group-header.dba { background: rgba(167,139,250,0.08); border-left: 3px solid var(--dba); }
+  .role-group-header.ce  { background: rgba(56,189,248,0.08); border-left: 3px solid var(--ce); }
+
+  /* -- STORY ROW -- */
+  .story-table td:nth-child(1) { width: 32px; text-align: center; }
+  .story-table td:nth-child(2) { width: 60px; }
+  .story-table td:nth-child(4) { width: 200px; font-size: 0.8rem; color: var(--text-muted); }
+
+  /* -- PREREQ CHIP -- */
+  .prereq {
+    display: inline-block; padding: 0.1rem 0.45rem; border-radius: 4px;
+    font-size: 0.7rem; font-weight: 500;
+    background: rgba(251,191,36,0.1); color: var(--amber);
+    margin: 0.1rem 0.15rem;
+  }
+
+  /* -- DIAGRAM CONTAINER -- */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem;
+    margin: 2rem 0; overflow-x: auto;
+  }
+  .diagram-wrap .mermaid { display: flex; justify-content: center; }
+  .diagram-wrap .caption {
+    text-align: center; font-size: 0.8rem; color: var(--text-muted);
+    margin-top: 1rem; font-style: italic;
+  }
+
+  /* ZOOM CONTROLS */
+  .diagram-zoom-viewport {
+    overflow: hidden; cursor: grab; position: relative;
+    min-height: 100px;
+  }
+  .diagram-zoom-viewport:active { cursor: grabbing; }
+  .diagram-zoom-viewport .zoom-inner {
+    transition: transform 0.1s ease-out; transform-origin: center center;
+    display: flex; justify-content: center;
+  }
+  .zoom-controls {
+    position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;
+  }
+  .zoom-btn {
+    width: 30px; height: 30px; border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text-muted); border-radius: 6px; cursor: pointer; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; user-select: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .zoom-btn:hover { background: var(--accent); color: #fff; }
+  .zoom-level {
+    font-size: 11px; color: var(--text-muted); display: flex; align-items: center;
+    padding: 0 4px; font-variant-numeric: tabular-nums;
+  }
+
+  /* -- GANTT-LIKE TIMELINE -- */
+  .gantt-grid {
+    display: grid;
+    grid-template-columns: 120px repeat(6, 1fr);
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 0.8rem;
+  }
+  .gantt-header {
+    padding: 0.6rem 0.8rem;
+    background: var(--surface2);
+    font-weight: 600;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .gantt-header:first-child { text-align: left; }
+  .gantt-role {
+    padding: 0.6rem 0.8rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+  }
+  .gantt-cell {
+    padding: 0.5rem 0.3rem;
+    border-bottom: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .gantt-bar {
+    height: 24px; border-radius: 6px; width: 90%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 600; color: #fff;
+  }
+  .gantt-bar.sre { background: linear-gradient(90deg, rgba(52,211,153,0.6), rgba(52,211,153,0.3)); }
+  .gantt-bar.dba { background: linear-gradient(90deg, rgba(167,139,250,0.6), rgba(167,139,250,0.3)); }
+  .gantt-bar.ce  { background: linear-gradient(90deg, rgba(56,189,248,0.6), rgba(56,189,248,0.3)); }
+  .gantt-bar.sre.active { background: linear-gradient(90deg, rgba(52,211,153,0.9), rgba(52,211,153,0.5)); }
+  .gantt-bar.dba.active { background: linear-gradient(90deg, rgba(167,139,250,0.9), rgba(167,139,250,0.5)); }
+  .gantt-bar.ce.active  { background: linear-gradient(90deg, rgba(56,189,248,0.9), rgba(56,189,248,0.5)); }
+  .gantt-empty { }
+
+  /* -- DEPENDENCY TABLE -- */
+  .dep-arrow { color: var(--amber); font-weight: 700; }
+
+  /* -- CARD -- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.3rem;
+  }
+  .card h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+  .card p { font-size: 0.85rem; color: var(--text-muted); }
+
+  /* -- SPLIT LAYOUT -- */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+
+  /* -- COLORED ACCENTS -- */
+  .bg-blue { background: rgba(108,138,255,0.12); color: var(--accent); }
+  .bg-green { background: rgba(52,211,153,0.12); color: var(--green); }
+  .bg-amber { background: rgba(251,191,36,0.12); color: var(--amber); }
+  .bg-red { background: rgba(248,113,113,0.12); color: var(--red); }
+  .bg-purple { background: rgba(167,139,250,0.12); color: var(--purple); }
+  .text-green { color: var(--green); }
+  .text-amber { color: var(--amber); }
+  .text-red { color: var(--red); }
+  .text-accent { color: var(--accent); }
+  .text-muted { color: var(--text-muted); }
+
+  /* -- DIVIDER -- */
+  .divider { height: 1px; background: var(--border); margin: 3rem 0; }
+
+  /* -- FOOTER -- */
+  footer {
+    text-align: center; padding: 3rem 2rem;
+    color: var(--text-muted); font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* -- SPLIT NOTE -- */
+  .split-note {
+    display: inline-block; padding: 0.15rem 0.45rem; border-radius: 4px;
+    font-size: 0.68rem; font-weight: 600;
+    background: rgba(248,113,113,0.12); color: var(--red);
+    margin-left: 0.3rem;
+  }
+
+  @media (max-width: 900px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .split { grid-template-columns: 1fr; }
+    .gantt-grid { font-size: 0.7rem; }
+    nav .links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="logo">IR Agent Platform &mdash; Work Breakdown</span>
+  <div class="links">
+    <a href="#summary">Summary</a>
+    <a href="#phase1">Phase 1</a>
+    <a href="#phase2">Phase 2</a>
+    <a href="#phase3">Phase 3</a>
+    <a href="#phase4">Phase 4</a>
+    <a href="#phase5">Phase 5</a>
+    <a href="#phase6">Phase 6</a>
+    <a href="#dependencies">Dependencies</a>
+    <a href="#timeline">Timeline</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <span class="badge">ADO Work Breakdown &mdash; All Phases</span>
+  <h1>User Stories by Role</h1>
+  <p>52 user stories across 6 phases, sliced by SRE, DBA, and CE roles with dependency ordering, story point estimates, and critical path visualization.</p>
+</div>
+
+<!-- ============== SUMMARY STATS ============== -->
+<section id="summary">
+  <div class="section-label">Project Summary</div>
+  <h2>At a Glance</h2>
+  <p class="subtitle">Story points and story counts across all 6 implementation phases.</p>
+
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="number">52</div>
+      <div class="label">Total User Stories</div>
+    </div>
+    <div class="stat">
+      <div class="number">169</div>
+      <div class="label">Total Story Points</div>
+    </div>
+    <div class="stat">
+      <div class="number green">18</div>
+      <div class="label">SRE Stories (62 SP)</div>
+    </div>
+    <div class="stat">
+      <div class="number purple">8</div>
+      <div class="label">DBA Stories (21 SP)</div>
+    </div>
+    <div class="stat">
+      <div class="number cyan">26</div>
+      <div class="label">CE Stories (86 SP)</div>
+    </div>
+  </div>
+
+  <!-- Role breakdown bars -->
+  <div style="display:flex; gap:0.3rem; height:12px; border-radius:6px; overflow:hidden; margin-bottom:2rem; max-width:800px;">
+    <div style="flex:62; background:var(--sre);" title="SRE: 62 SP (37%)"></div>
+    <div style="flex:21; background:var(--dba);" title="DBA: 21 SP (12%)"></div>
+    <div style="flex:86; background:var(--ce);" title="CE: 86 SP (51%)"></div>
+  </div>
+  <div style="display:flex; gap:2rem; font-size:0.8rem; color:var(--text-muted); margin-bottom:3rem;">
+    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--sre);vertical-align:middle;margin-right:0.3rem;"></span> SRE &mdash; 37%</span>
+    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--dba);vertical-align:middle;margin-right:0.3rem;"></span> DBA &mdash; 12%</span>
+    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--ce);vertical-align:middle;margin-right:0.3rem;"></span> CE &mdash; 51%</span>
+  </div>
+
+  <!-- Phase breakdown table -->
+  <table>
+    <thead>
+      <tr><th>Phase</th><th>Name</th><th>SRE</th><th>DBA</th><th>CE</th><th>Stories</th><th>SP</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="text-accent" style="font-weight:700;">1</td><td>Scaffold &amp; Infrastructure</td><td>6 (22 SP)</td><td>2 (4 SP)</td><td>3 (10 SP)</td><td>11</td><td>36</td></tr>
+      <tr><td class="text-accent" style="font-weight:700;">2</td><td>Core Agents</td><td>2 (6 SP)</td><td>1 (3 SP)</td><td>13 (47 SP)</td><td>16</td><td>56</td></tr>
+      <tr><td class="text-accent" style="font-weight:700;">3</td><td>Teams Integration</td><td>2 (6 SP)</td><td>0</td><td>4 (14 SP)</td><td>6</td><td>20</td></tr>
+      <tr><td class="text-accent" style="font-weight:700;">4</td><td>Deduplication Engine</td><td>0</td><td>2 (6 SP)</td><td>3 (8 SP)</td><td>5</td><td>14</td></tr>
+      <tr><td class="text-accent" style="font-weight:700;">5</td><td>Post-Incident &amp; KB</td><td>0</td><td>2 (5 SP)</td><td>3 (7 SP)</td><td>5</td><td>12</td></tr>
+      <tr><td class="text-accent" style="font-weight:700;">6</td><td>Deploy &amp; Test</td><td>8 (28 SP)</td><td>1 (3 SP)</td><td>0</td><td>9</td><td>31</td></tr>
+      <tr style="background:var(--surface2); font-weight:700;">
+        <td></td><td>Total</td><td>18 (62 SP)</td><td>8 (21 SP)</td><td>26 (86 SP)</td><td>52</td><td>169</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============== PHASE 1 ============== -->
+<section id="phase1">
+  <div class="phase-header">
+    <div class="phase-num">1</div>
+    <div class="phase-info">
+      <h3>Scaffold &amp; Infrastructure</h3>
+      <p>Repository creation, ADK project scaffold, webhook frontend, Pub/Sub, Firestore setup, Bifrost config, Cloud Run, and ADO pipeline.</p>
+    </div>
+    <div class="phase-stats">
+      <div class="phase-stat"><div class="val">11</div><div class="lbl">Stories</div></div>
+      <div class="phase-stat"><div class="val">36</div><div class="lbl">SP</div></div>
+    </div>
+  </div>
+
+  <!-- SRE -->
+  <div class="role-group">
+    <div class="role-group-header sre">
+      <span class="role-tag role-sre">SRE</span> Infrastructure &amp; Platform &mdash; 6 stories, 22 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>1.1</strong> As an SRE, I need to create the ADO repository (<code>AIOps/incident-response-agent</code>) with canonical ADK layout so that the team has a versioned home for all IR agent code.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>1.2</strong> As an SRE, I need to provision Pub/Sub topic (<code>incident-alerts</code>) and push subscription with IAM bindings so that the webhook frontend can publish sanitized alerts to the orchestrator.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>1.3</strong> As an SRE, I need to configure Bifrost virtual key (<code>incident-response-agent</code>) with budget caps and per-MCP-server read-only <code>tools_to_execute</code> allowlists so that agents can only call approved read operations.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>1.4</strong> As an SRE, I need to create a Sentry internal integration with read-only scopes (<code>event:read</code>, <code>project:read</code>, <code>org:read</code>) and register it in Bifrost as <code>sentry_token</code> so that the Sentry Error agent can query issues without per-user OAuth.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>1.5</strong> As an SRE, I need Cloud Run service YAMLs for webhook frontend (<code>aiops-{env}-run-ir-webhook-us-c1</code>, min 1/max 10) and orchestrator (<code>aiops-{env}-run-ir-orchestrator-us-c1</code>, min 0/max 50) with 3600s timeout, service accounts, and Secret Manager bindings so that the platform can deploy to dev and prod.</td>
+          <td><span class="prereq">1.1 Repo</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>1.6</strong> As an SRE, I need a 3-stage ADO pipeline (Build, DeployDev, ApproveProd, DeployProd) with Dockerfile and deployment scripts so that code merges trigger automated deployment to Cloud Run.</td>
+          <td><span class="prereq">1.1 Repo</span> <span class="prereq">1.5 Service YAMLs</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DBA -->
+  <div class="role-group">
+    <div class="role-group-header dba">
+      <span class="role-tag role-dba">DBA</span> Database &amp; Schema &mdash; 2 stories, 4 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>1.7</strong> As a DBA, I need to set up Firestore collections in Native mode (us-central1, aiops-dev-project) with 2 collections (incidents, decision_trees) and compound indexes for structured queries so that all platform data has a persistent, queryable home.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">1</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>1.8</strong> As a DBA, I need to configure Firestore IAM permissions so that Cloud Run services can access Firestore using Application Default Credentials (ADC).</td>
+          <td><span class="prereq">1.7 Firestore Setup</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CE -->
+  <div class="role-group">
+    <div class="role-group-header ce">
+      <span class="role-tag role-ce">CE</span> Application Engineering &mdash; 3 stories, 10 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>1.9</strong> As a CE, I need to scaffold the ADK project with FastAPI + ADK runner, health endpoint, <code>pyproject.toml</code>, and canonical directory structure so that agents have a runnable host application from day one.</td>
+          <td><span class="prereq">1.1 Repo</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>1.10</strong> As a CE, I need a webhook frontend (FastAPI) that receives HTTP POSTs from Datadog, PagerDuty, and GCP Monitoring, validates signatures per source, and publishes sanitized payloads to Pub/Sub so that alerts enter the system securely.</td>
+          <td><span class="prereq">1.1 Repo</span> <span class="prereq">1.2 Pub/Sub</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>1.11</strong> As a CE, I need a payload sanitizer that strips HTML/markdown, truncates fields (title: 256 chars, description: 4096 chars), escapes prompt-injection patterns, and routes raw payload to structured fields only so that LLM context is never poisoned by alert content.</td>
+          <td><span class="prereq">1.9 Scaffold</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== PHASE 2 ============== -->
+<section id="phase2">
+  <div class="phase-header">
+    <div class="phase-num">2</div>
+    <div class="phase-info">
+      <h3>Core Agents</h3>
+      <p>Classification, 12 investigation agents, synthesis, report generator, role-based dispatchers, checkpointing, Bifrost circuit breaker, and ADK wiring.</p>
+    </div>
+    <div class="phase-stats">
+      <div class="phase-stat"><div class="val">16</div><div class="lbl">Stories</div></div>
+      <div class="phase-stat"><div class="val">56</div><div class="lbl">SP</div></div>
+    </div>
+  </div>
+
+  <!-- SRE -->
+  <div class="role-group">
+    <div class="role-group-header sre">
+      <span class="role-tag role-sre">SRE</span> Platform Support &mdash; 2 stories, 6 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>2.1</strong> As an SRE, I need IAM bindings for the orchestrator service account granting read access to GCP Logging, GCP Monitoring, and Cloud Run APIs so that GCP-native agents can query infrastructure data.</td>
+          <td><span class="prereq">1.5 Service YAMLs</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>2.2</strong> As an SRE, I need GCP client library wrappers (<code>tools/gcp_client.py</code>) for Cloud Logging and Cloud Monitoring with structured query builders so that GCP-native agents (Cloud Run Health, GCP Logging, GCP Metrics) have a consistent interface.</td>
+          <td><span class="prereq">2.1 IAM</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DBA -->
+  <div class="role-group">
+    <div class="role-group-header dba">
+      <span class="role-tag role-dba">DBA</span> Database Support &mdash; 1 story, 3 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>2.3</strong> As a DBA, I need the Firestore tools module (<code>tools/firestore_tools.py</code>) with functions for incident CRUD and session state read/write so that agents and the orchestrator have optimized database access using ADC.</td>
+          <td><span class="prereq">1.7 Firestore Setup</span> <span class="prereq">1.8 IAM</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CE -->
+  <div class="role-group">
+    <div class="role-group-header ce">
+      <span class="role-tag role-ce">CE</span> Agent Development &mdash; 13 stories, 47 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.4</strong> As a CE, I need a Classification LlmAgent with 11+ extensible category prompt (including an "X — extensible" placeholder for future categories) and deterministic output schema so that every incoming alert is categorized into a dispatch-ready category and new categories can be added as patterns emerge.</td>
+          <td><span class="prereq">1.9 Scaffold</span> <span class="prereq">1.3 Bifrost key</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.5</strong> As a CE, I need a historical search tool that queries Firestore for top-3 similar past incidents using compound queries so that agents have context about prior resolutions before investigating.</td>
+          <td><span class="prereq">2.3 Firestore Tools</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.6</strong> As a CE, I need the Bifrost MCP client (<code>tools/bifrost_mcp.py</code>) with McpToolset integration and circuit breaker (30s of 5xx triggers fallback to direct Vertex AI) so that all agent tool calls route through the gateway with automatic failover.</td>
+          <td><span class="prereq">1.3 Bifrost key</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.7</strong> As a CE, I need the 8 Tier-1 investigation agents (Cloud Run Health, GCP Logging, GCP Metrics, Datadog Observability, Sentry Error, Deploy Correlation, Teams Context, Known Issues), each with deterministic numbered checklists and structured output schemas so that every alert receives consistent parallel investigation.</td>
+          <td><span class="prereq">2.2 GCP wrappers</span> <span class="prereq">2.6 Bifrost client</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.8</strong> As a CE, I need the 5 Tier-2 investigation agents (Pub/Sub, Cache, SQL DBA, Auth/Security, Codebase), each with deterministic checklists and category-based dispatch triggers so that deeper investigation runs conditionally based on alert category.</td>
+          <td><span class="prereq">2.2 GCP wrappers</span> <span class="prereq">2.6 Bifrost client</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.9</strong> As a CE, I need agent system prompts (<code>config/agent_prompts/*.md</code>) for all 12 investigation agents embedding the 15 non-negotiable investigation rules, confidence labels, and deterministic checklists so that LLM behavior is tightly controlled.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.10</strong> As a CE, I need configuration modules for incident categories + dispatch matrix (<code>config/categories.py</code>), Datadog dashboard IDs (<code>config/dashboard_ids.py</code>), and service mappings (<code>config/service_mapping.py</code>) so that agent dispatch and tool queries are data-driven, not hardcoded.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.11</strong> As a CE, I need a Synthesis LlmAgent that merges findings from all completed agents, identifies investigation gaps, and decides which Tier-2 agents to dispatch based on category and signals so that the orchestrator makes informed routing decisions.</td>
+          <td><span class="prereq">2.7 Tier-1 agents</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.12</strong> As a CE, I need a Report Generator LlmAgent that produces Teams-ready HTML from synthesized findings with severity, confidence labels, affected services, and recommended next steps so that engineers receive actionable, consistently formatted reports.</td>
+          <td><span class="prereq">2.11 Synthesis</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.13</strong> As a CE, I need an investigation checkpointing module (<code>tools/checkpoint.py</code>) that writes investigation findings to Firestore as each agent completes and on container restart queries Firestore to resume from the last checkpoint so that no investigation work is lost.</td>
+          <td><span class="prereq">2.3 Firestore Tools</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.14</strong> As a CE, I need the ADK orchestrator wiring with ParallelAgent for Tier-1, SequentialAgent for full flow, Agent Engine Sessions (VertexAiSessionService), and category-based Tier-2 dispatch so that the end-to-end investigation pipeline runs autonomously.</td>
+          <td><span class="prereq">2.7 Tier-1</span> <span class="prereq">2.8 Tier-2</span> <span class="prereq">2.11 Synthesis</span> <span class="prereq">2.13 Checkpoint</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.15</strong> As a CE, I need 3 role-based dispatcher agents (SRE Dispatcher, CE Dispatcher, DBA Dispatcher) that filter raw investigation findings for their specific audience, prioritize by role-relevant signals, and target role-appropriate Teams channels so that each team gets actionable reports without noise.</td>
+          <td><span class="prereq">2.11 Synthesis</span> <span class="prereq">2.12 Report Gen</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>2.16</strong> As a CE, I need Pydantic settings (<code>config/settings.py</code>) for all environment variables, feature flags, rate limits, and secret references so that configuration is validated at startup and documented in one place.</td>
+          <td><span class="prereq">1.9 Scaffold</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== PHASE 3 ============== -->
+<section id="phase3">
+  <div class="phase-header">
+    <div class="phase-num">3</div>
+    <div class="phase-info">
+      <h3>Teams Integration</h3>
+      <p>Entra ID app registration, Graph API tool, message batching, orchestrator posting rules, and channel polling.</p>
+    </div>
+    <div class="phase-stats">
+      <div class="phase-stat"><div class="val">6</div><div class="lbl">Stories</div></div>
+      <div class="phase-stat"><div class="val">20</div><div class="lbl">SP</div></div>
+    </div>
+  </div>
+
+  <!-- SRE -->
+  <div class="role-group">
+    <div class="role-group-header sre">
+      <span class="role-tag role-sre">SRE</span> Identity &amp; Secrets &mdash; 2 stories, 6 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>3.1</strong> As an SRE, I need an Entra ID app registration with app-only permissions (<code>ChannelMessage.Send</code>, <code>ChannelMessage.Read.All</code>, <code>Chat.ReadWrite.All</code>) and admin consent so that the Teams bot can post and read messages without user delegation.</td>
+          <td>&mdash;</td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>3.2</strong> As an SRE, I need to provision <code>ir-teams-client-id</code> and <code>ir-teams-client-secret</code> in Secret Manager with automatic rotation and grant the orchestrator service account <code>secretAccessor</code> so that Teams credentials are managed securely.</td>
+          <td><span class="prereq">3.1 Entra app</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CE -->
+  <div class="role-group">
+    <div class="role-group-header ce">
+      <span class="role-tag role-ce">CE</span> Teams Bot &amp; Posting &mdash; 4 stories, 14 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>3.3</strong> As a CE, I need a Graph API tool (<code>tools/teams_graph.py</code>) with 3 functions (post, read, reply) that authenticates via client credentials flow and acts as a stateless "dumb pipe" so that the orchestrator has full control over posting logic.</td>
+          <td><span class="prereq">3.1 Entra app</span> <span class="prereq">3.2 Secrets</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>3.4</strong> As a CE, I need a Teams message batching system that buffers findings for 90 seconds, posts one consolidated update per incident per cycle, and during storms (&gt;3 active incidents) aggregates into a single dashboard-style summary post so that channels are not spammed during alert storms.</td>
+          <td><span class="prereq">3.3 Graph API tool</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>3.5</strong> As a CE, I need orchestrator posting rules that define when and where to post (new incident, findings update, resolution) with rate limits (max 1 post per incident per 90s, max 10 posts per channel per 15 min) so that Teams output is controlled and predictable.</td>
+          <td><span class="prereq">3.4 Batching</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>3.6</strong> As a CE, I need timer-based channel polling that reads engineer responses from Teams threads and feeds them into the orchestrator as additional context so that engineers can interact with the platform naturally.</td>
+          <td><span class="prereq">3.3 Graph API tool</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== PHASE 4 ============== -->
+<section id="phase4">
+  <div class="phase-header">
+    <div class="phase-num">4</div>
+    <div class="phase-info">
+      <h3>Deduplication Engine</h3>
+      <p>Two-pass Firestore atomic dedup, self-exclusion filter, and merge logic.</p>
+    </div>
+    <div class="phase-stats">
+      <div class="phase-stat"><div class="val">5</div><div class="lbl">Stories</div></div>
+      <div class="phase-stat"><div class="val">14</div><div class="lbl">SP</div></div>
+    </div>
+  </div>
+
+  <!-- DBA -->
+  <div class="role-group">
+    <div class="role-group-header dba">
+      <span class="role-tag role-dba">DBA</span> Dedup Queries &amp; Indexing &mdash; 2 stories, 6 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>4.1</strong> As a DBA, I need to implement the fast dedup query (Pass 1) using Firestore transactions on <code>(service_name, alert_type)</code> within a 5-minute window, ensuring atomicity across concurrent webhook instances so that duplicate alerts never create separate incidents.</td>
+          <td><span class="prereq">1.7 Firestore Setup</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>4.2</strong> As a DBA, I need to implement the semantic dedup query (Pass 2) using Vertex AI embedding + Firestore compound queries (&gt;0.85 threshold) against active incidents within the same Firestore transaction as Pass 1 so that semantically related but differently-worded alerts are correlated.</td>
+          <td><span class="prereq">1.7 Firestore Setup</span> <span class="prereq">4.1 Pass 1</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CE -->
+  <div class="role-group">
+    <div class="role-group-header ce">
+      <span class="role-tag role-ce">CE</span> Dedup Application Logic &mdash; 3 stories, 8 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>4.3</strong> As a CE, I need the dedup engine module (<code>tools/dedup.py</code>) that orchestrates both passes, calls Vertex AI for embeddings, and returns merge/new decision to the orchestrator so that the webhook frontend can route alerts to existing or new investigations.</td>
+          <td><span class="prereq">4.1 Pass 1 query</span> <span class="prereq">4.2 Pass 2 query</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>4.4</strong> As a CE, I need merge logic that appends a deduplicated alert to an existing incident, updates the orchestrator state, and creates a correlation record in Firestore so that correlated alerts are tracked and visible in incident reports.</td>
+          <td><span class="prereq">4.3 Dedup engine</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>4.5</strong> As a CE, I need a self-exclusion filter in the sanitizer that detects alerts from IR platform services (<code>aiops-*-run-ir-*</code>), logs them for auditing, but never spawns an investigation so that the platform cannot create feedback loops by investigating itself.</td>
+          <td><span class="prereq">1.11 Sanitizer</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== PHASE 5 ============== -->
+<section id="phase5">
+  <div class="phase-header">
+    <div class="phase-num">5</div>
+    <div class="phase-info">
+      <h3>Post-Incident &amp; Knowledge Base</h3>
+      <p>Debrief agent, KB write with embeddings, and decision tree updates.</p>
+    </div>
+    <div class="phase-stats">
+      <div class="phase-stat"><div class="val">5</div><div class="lbl">Stories</div></div>
+      <div class="phase-stat"><div class="val">12</div><div class="lbl">SP</div></div>
+    </div>
+  </div>
+
+  <!-- DBA -->
+  <div class="role-group">
+    <div class="role-group-header dba">
+      <span class="role-tag role-dba">DBA</span> KB Queries &amp; Optimization &mdash; 2 stories, 5 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>5.1</strong> As a DBA, I need optimized queries for KB write operations: embed incident summary + findings + debrief via Vertex AI, insert into Firestore incidents collection, and update decision_trees with success/total increments so that the knowledge base grows efficiently with every resolved incident.</td>
+          <td><span class="prereq">1.7 Firestore Setup</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>5.2</strong> As a DBA, I need to tune Firestore compound indexes based on expected incident volume and add indexes on <code>incidents.status = 'active'</code> and <code>incidents.category</code> so that queries remain fast as the KB grows.</td>
+          <td><span class="prereq">5.1 KB queries</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CE -->
+  <div class="role-group">
+    <div class="role-group-header ce">
+      <span class="role-tag role-ce">CE</span> Debrief &amp; Learning &mdash; 3 stories, 7 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>5.3</strong> As a CE, I need a Debrief LlmAgent that conducts a 13-question post-incident interview via Teams thread interaction, records Q&amp;A pairs in Firestore, and supports asynchronous responses (engineer replies hours later) so that institutional knowledge is captured from every incident.</td>
+          <td><span class="prereq">3.3 Graph API tool</span> <span class="prereq">2.3 Firestore Tools</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>5.4</strong> As a CE, I need a KB write module that embeds the complete incident context (summary + findings + debrief) via Vertex AI and stores it in Firestore so that future incidents can find similar past cases via compound queries.</td>
+          <td><span class="prereq">5.1 KB queries</span> <span class="prereq">5.3 Debrief agent</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">2</div></td>
+          <td><span class="role-tag role-ce">CE</span></td>
+          <td><strong>5.5</strong> As a CE, I need a decision tree update module that increments success/total counts in the Firestore decision_trees collection when an incident is resolved with a confirmed root cause so that routing confidence improves over time.</td>
+          <td><span class="prereq">5.1 KB queries</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== PHASE 6 ============== -->
+<section id="phase6">
+  <div class="phase-header">
+    <div class="phase-num">6</div>
+    <div class="phase-info">
+      <h3>Deploy &amp; Test</h3>
+      <p>Dev deployment, webhook registration, E2E testing, load testing, checkpoint/resume verification, and monitoring setup.</p>
+    </div>
+    <div class="phase-stats">
+      <div class="phase-stat"><div class="val">9</div><div class="lbl">Stories</div></div>
+      <div class="phase-stat"><div class="val">31</div><div class="lbl">SP</div></div>
+    </div>
+  </div>
+
+  <!-- SRE -->
+  <div class="role-group">
+    <div class="role-group-header sre">
+      <span class="role-tag role-sre">SRE</span> Deployment &amp; Verification &mdash; 8 stories, 28 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.1</strong> As an SRE, I need to deploy the webhook frontend and orchestrator to dev Cloud Run (<code>aiops-dev-run-ir-webhook-us-c1</code>, <code>aiops-dev-run-ir-orchestrator-us-c1</code>) and verify health endpoints return 200 so that the platform has a running dev environment.</td>
+          <td><span class="prereq">1.6 Pipeline</span> <span class="prereq">All Phase 2-5</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.2</strong> As an SRE, I need to register webhook URLs in Datadog (notification channel), PagerDuty (webhook subscription), and GCP Monitoring (notification channel) pointing to the dev webhook frontend so that real alerts flow into the system.</td>
+          <td><span class="prereq">6.1 Dev deploy</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.3</strong> As an SRE, I need an E2E test that sends a synthetic Datadog webhook to the frontend, verifies it passes through sanitizer, publishes to Pub/Sub, triggers the orchestrator, runs investigation agents, and produces a Teams post so that the full pipeline is validated end-to-end.</td>
+          <td><span class="prereq">6.1 Dev deploy</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">5</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.4</strong> As an SRE, I need a load test that sends 100 concurrent synthetic alerts and verifies that dedup merges them to approximately 5-10 incidents with zero duplicates (Firestore transactions hold), Cloud Run autoscales correctly, and Teams receives no more than 10 posts per channel per 15 minutes so that the system behaves correctly under storm conditions.</td>
+          <td><span class="prereq">6.3 E2E test</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.5</strong> As an SRE, I need a checkpoint/resume test that kills an orchestrator container mid-Tier-1 investigation and verifies the replacement container resumes from the last checkpoint in Firestore without re-running completed agents so that the resilience design is proven.</td>
+          <td><span class="prereq">6.1 Dev deploy</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.6</strong> As an SRE, I need to trigger a real Datadog alert in dev, confirm full triage runs, and verify the Teams post has correct channel targeting, formatting, and findings so that the platform is validated against real-world alerts before production rollout.</td>
+          <td><span class="prereq">6.2 Webhook registration</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.7</strong> As an SRE, I need Datadog monitors for the IR platform itself: webhook frontend error rate, orchestrator container count, Pub/Sub backlog depth, Firestore operation latency, and Bifrost circuit breaker state so that the platform's own health is observable.</td>
+          <td><span class="prereq">6.1 Dev deploy</span></td>
+        </tr>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-sre">SRE</span></td>
+          <td><strong>6.8</strong> As an SRE, I need a self-exclusion integration test that sends an alert sourced from <code>aiops-dev-run-ir-orchestrator-us-c1</code> and verifies it is logged but no investigation is spawned so that the feedback loop protection is validated in a real environment.</td>
+          <td><span class="prereq">6.1 Dev deploy</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DBA -->
+  <div class="role-group">
+    <div class="role-group-header dba">
+      <span class="role-tag role-dba">DBA</span> Data Verification &mdash; 1 story, 3 SP
+    </div>
+    <table class="story-table">
+      <thead><tr><th>SP</th><th>Role</th><th>Story</th><th>Prerequisites</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><div class="sp-badge">3</div></td>
+          <td><span class="role-tag role-dba">DBA</span></td>
+          <td><strong>6.9</strong> As a DBA, I need to run a KB query validation test: insert 10 sample incidents into Firestore, perform a natural language search for a past incident, and verify top-3 results include the correct match so that query accuracy is confirmed before production.</td>
+          <td><span class="prereq">5.1 KB queries</span> <span class="prereq">5.2 Index tuning</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== DEPENDENCY VISUALIZATION ============== -->
+<section id="dependencies" class="wide">
+  <div class="section-label">Dependencies</div>
+  <h2>Critical Path &amp; Blocking Relationships</h2>
+  <p class="subtitle">Arrows show "blocks" relationships. The critical path runs through Firestore setup, agent development, and ADK wiring.</p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart LR
+    subgraph P1["Phase 1: Scaffold"]
+        R["1.1 Repo<br/>(SRE, 3 SP)"]
+        PS["1.2 Pub/Sub<br/>(SRE, 3 SP)"]
+        BF["1.3 Bifrost Key<br/>(SRE, 3 SP)"]
+        SENT_I["1.4 Sentry Int<br/>(SRE, 2 SP)"]
+        YAML["1.5 CR YAMLs<br/>(SRE, 5 SP)"]
+        PIPE["1.6 Pipeline<br/>(SRE, 5 SP)"]
+        SCHEMA["1.7 Firestore Setup<br/>(DBA, 3 SP)"]
+        CONN["1.8 Firestore IAM<br/>(DBA, 1 SP)"]
+        SCAF["1.9 ADK Scaffold<br/>(CE, 3 SP)"]
+        WH["1.10 Webhook<br/>(CE, 5 SP)"]
+        SAN["1.11 Sanitizer<br/>(CE, 2 SP)"]
+    end
+
+    subgraph P2["Phase 2: Core Agents"]
+        IAM["2.1 IAM<br/>(SRE, 3 SP)"]
+        GCP_W["2.2 GCP Wrappers<br/>(SRE, 3 SP)"]
+        DAL["2.3 Firestore Tools<br/>(DBA, 3 SP)"]
+        CLASS["2.4 Classifier<br/>(CE, 3 SP)"]
+        HIST["2.5 Hist Search<br/>(CE, 2 SP)"]
+        BFC["2.6 Bifrost Client<br/>(CE, 3 SP)"]
+        T1["2.7 Tier-1 Agents<br/>(CE, 5 SP)"]
+        T2["2.8 Tier-2 Agents<br/>(CE, 5 SP)"]
+        SYNTH["2.11 Synthesis<br/>(CE, 3 SP)"]
+        REPORT["2.12 Report Gen<br/>(CE, 3 SP)"]
+        CHKPT["2.13 Checkpoint<br/>(CE, 2 SP)"]
+        ORCH["2.14 ADK Wiring<br/>(CE, 5 SP)"]
+        ROLE["2.15 Role Dispatch<br/>(CE, 5 SP)"]
+    end
+
+    subgraph P3["Phase 3: Teams"]
+        ENTRA["3.1 Entra App<br/>(SRE, 3 SP)"]
+        SEC["3.2 Secrets<br/>(SRE, 3 SP)"]
+        GRAPH["3.3 Graph API<br/>(CE, 3 SP)"]
+        BATCH["3.4 Batching<br/>(CE, 5 SP)"]
+    end
+
+    subgraph P4["Phase 4: Dedup"]
+        DP1["4.1 Fast Dedup<br/>(DBA, 3 SP)"]
+        DP2["4.2 Semantic Dedup<br/>(DBA, 3 SP)"]
+        DMOD["4.3 Dedup Module<br/>(CE, 3 SP)"]
+    end
+
+    subgraph P5["Phase 5: KB"]
+        KBQ["5.1 KB Queries<br/>(DBA, 3 SP)"]
+        DEB["5.3 Debrief<br/>(CE, 3 SP)"]
+    end
+
+    subgraph P6["Phase 6: Deploy"]
+        DEV["6.1 Dev Deploy<br/>(SRE, 3 SP)"]
+        E2E["6.3 E2E Test<br/>(SRE, 5 SP)"]
+        LOAD["6.4 Load Test<br/>(SRE, 5 SP)"]
+    end
+
+    %% Phase 1 internal
+    R --> YAML
+    R --> PIPE
+    R --> SCAF
+    R --> WH
+    PS --> WH
+    YAML --> PIPE
+    SCHEMA --> CONN
+    SCAF --> SAN
+
+    %% Phase 1 to 2
+    YAML --> IAM
+    IAM --> GCP_W
+    SCHEMA --> DAL
+    CONN --> DAL
+    SCAF --> CLASS
+    BF --> CLASS
+    BF --> BFC
+    GCP_W --> T1
+    BFC --> T1
+    GCP_W --> T2
+    BFC --> T2
+    DAL --> HIST
+    DAL --> CHKPT
+    T1 --> SYNTH
+    SYNTH --> REPORT
+    SYNTH --> ROLE
+    REPORT --> ROLE
+    T1 --> ORCH
+    T2 --> ORCH
+    SYNTH --> ORCH
+    CHKPT --> ORCH
+
+    %% Phase 2 to 3
+    ENTRA --> SEC
+    ENTRA --> GRAPH
+    SEC --> GRAPH
+    GRAPH --> BATCH
+
+    %% Phase 1 to 4
+    SCHEMA --> DP1
+    DP1 --> DP2
+    DP2 --> DMOD
+    SAN -->|self-exclusion| DMOD
+
+    %% Phase 2/3 to 5
+    SCHEMA --> KBQ
+    DAL --> DEB
+    GRAPH --> DEB
+
+    %% All to Phase 6
+    PIPE --> DEV
+    ORCH --> DEV
+    DEV --> E2E
+    E2E --> LOAD
+
+    style P1 fill:#0f172a,stroke:#334155,color:#e2e8f0
+    style P2 fill:#0f172a,stroke:#334155,color:#e2e8f0
+    style P3 fill:#0f172a,stroke:#334155,color:#e2e8f0
+    style P4 fill:#0f172a,stroke:#334155,color:#e2e8f0
+    style P5 fill:#0f172a,stroke:#334155,color:#e2e8f0
+    style P6 fill:#0f172a,stroke:#334155,color:#e2e8f0
+    </pre>
+    <div class="caption">Dependency graph showing cross-phase blocking relationships. Critical path highlighted by longest chain.</div>
+  </div>
+
+  <h3 style="margin-top:2rem; margin-bottom:1rem;">Key Blocking Chains</h3>
+  <table>
+    <thead><tr><th>Blocker</th><th></th><th>Blocked</th><th>Impact</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>1.7</strong> Firestore Setup <span class="role-tag role-dba">DBA</span></td>
+        <td class="dep-arrow">&#x2192;</td>
+        <td><strong>2.3</strong> Firestore Tools, <strong>4.1</strong> Fast Dedup, <strong>5.1</strong> KB Queries</td>
+        <td class="text-red">Blocks 3 phases. Highest-priority story.</td>
+      </tr>
+      <tr>
+        <td><strong>1.1</strong> Repo <span class="role-tag role-sre">SRE</span></td>
+        <td class="dep-arrow">&#x2192;</td>
+        <td><strong>1.5</strong> Service YAMLs, <strong>1.6</strong> Pipeline, <strong>1.9</strong> Scaffold, <strong>1.10</strong> Webhook</td>
+        <td class="text-amber">Blocks all code work. Day-1 task.</td>
+      </tr>
+      <tr>
+        <td><strong>1.3</strong> Bifrost Key <span class="role-tag role-sre">SRE</span></td>
+        <td class="dep-arrow">&#x2192;</td>
+        <td><strong>2.4</strong> Classifier, <strong>2.6</strong> Bifrost Client (all agents)</td>
+        <td class="text-amber">Blocks all LLM + MCP tool calls.</td>
+      </tr>
+      <tr>
+        <td><strong>3.1</strong> Entra App <span class="role-tag role-sre">SRE</span></td>
+        <td class="dep-arrow">&#x2192;</td>
+        <td><strong>3.3</strong> Graph API tool (all Teams features)</td>
+        <td class="text-amber">Blocks entire Phase 3.</td>
+      </tr>
+      <tr>
+        <td><strong>2.7</strong> Tier-1 Agents <span class="role-tag role-ce">CE</span></td>
+        <td class="dep-arrow">&#x2192;</td>
+        <td><strong>2.11</strong> Synthesis, <strong>2.14</strong> ADK Wiring</td>
+        <td>Blocks orchestrator assembly.</td>
+      </tr>
+      <tr>
+        <td><strong>2.14</strong> ADK Wiring <span class="role-tag role-ce">CE</span></td>
+        <td class="dep-arrow">&#x2192;</td>
+        <td><strong>6.1</strong> Dev Deploy (all Phase 6)</td>
+        <td>Blocks testing and deployment.</td>
+      </tr>
+      <tr>
+        <td><strong>2.2</strong> GCP Wrappers <span class="role-tag role-sre">SRE</span></td>
+        <td class="dep-arrow">&#x2192;</td>
+        <td><strong>2.7</strong> Tier-1 Agents (Cloud Run Health, GCP Logging, GCP Metrics)</td>
+        <td>Blocks 3 of 8 Tier-1 agents.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:2rem; margin-bottom:1rem;">Critical Path (Longest Chain)</h3>
+  <div style="display:flex; align-items:center; gap:0.3rem; flex-wrap:wrap; padding:1.5rem; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:1rem;">
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(52,211,153,0.12); color:var(--sre); border:1px solid rgba(52,211,153,0.3);">1.1 Repo</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(56,189,248,0.12); color:var(--ce); border:1px solid rgba(56,189,248,0.3);">1.9 Scaffold</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(56,189,248,0.12); color:var(--ce); border:1px solid rgba(56,189,248,0.3);">2.4 Classifier</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(56,189,248,0.12); color:var(--ce); border:1px solid rgba(56,189,248,0.3);">2.7 Tier-1</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(56,189,248,0.12); color:var(--ce); border:1px solid rgba(56,189,248,0.3);">2.11 Synthesis</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(56,189,248,0.12); color:var(--ce); border:1px solid rgba(56,189,248,0.3);">2.14 ADK Wiring</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(52,211,153,0.12); color:var(--sre); border:1px solid rgba(52,211,153,0.3);">6.1 Dev Deploy</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(52,211,153,0.12); color:var(--sre); border:1px solid rgba(52,211,153,0.3);">6.3 E2E Test</div>
+    <span style="color:var(--amber);">&#x2192;</span>
+    <div style="padding:0.4rem 0.7rem; border-radius:8px; font-size:0.8rem; font-weight:600; background:rgba(52,211,153,0.12); color:var(--sre); border:1px solid rgba(52,211,153,0.3);">6.4 Load Test</div>
+  </div>
+  <p style="font-size:0.82rem; color:var(--text-muted);">Critical path total: 3 + 3 + 3 + 5 + 3 + 5 + 3 + 5 + 5 = <strong>35 SP</strong>. This is the minimum serial effort regardless of team size. (Note: Firestore simplification reduced overall project SP from 175 to 169, but critical path unchanged.)</p>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== ROLE ACTIVITY TIMELINE ============== -->
+<section id="timeline" class="wide">
+  <div class="section-label">Timeline</div>
+  <h2>Role Activity by Phase</h2>
+  <p class="subtitle">Shows when each role is active and relative effort per phase. Darker bars indicate primary/heavy workload.</p>
+
+  <div class="gantt-grid">
+    <!-- Headers -->
+    <div class="gantt-header">Role</div>
+    <div class="gantt-header">Phase 1<br/><span style="font-size:0.65rem; font-weight:400;">Scaffold</span></div>
+    <div class="gantt-header">Phase 2<br/><span style="font-size:0.65rem; font-weight:400;">Agents</span></div>
+    <div class="gantt-header">Phase 3<br/><span style="font-size:0.65rem; font-weight:400;">Teams</span></div>
+    <div class="gantt-header">Phase 4<br/><span style="font-size:0.65rem; font-weight:400;">Dedup</span></div>
+    <div class="gantt-header">Phase 5<br/><span style="font-size:0.65rem; font-weight:400;">KB</span></div>
+    <div class="gantt-header">Phase 6<br/><span style="font-size:0.65rem; font-weight:400;">Deploy</span></div>
+
+    <!-- SRE Row -->
+    <div class="gantt-role" style="color:var(--sre);"><span class="role-tag role-sre">SRE</span></div>
+    <div class="gantt-cell"><div class="gantt-bar sre active">22 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar sre">6 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar sre">6 SP</div></div>
+    <div class="gantt-cell gantt-empty"></div>
+    <div class="gantt-cell gantt-empty"></div>
+    <div class="gantt-cell"><div class="gantt-bar sre active">28 SP</div></div>
+
+    <!-- DBA Row -->
+    <div class="gantt-role" style="color:var(--dba);"><span class="role-tag role-dba">DBA</span></div>
+    <div class="gantt-cell"><div class="gantt-bar dba active">4 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar dba">3 SP</div></div>
+    <div class="gantt-cell gantt-empty"></div>
+    <div class="gantt-cell"><div class="gantt-bar dba active">6 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar dba">5 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar dba">3 SP</div></div>
+
+    <!-- CE Row -->
+    <div class="gantt-role" style="color:var(--ce);"><span class="role-tag role-ce">CE</span></div>
+    <div class="gantt-cell"><div class="gantt-bar ce">10 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar ce active">47 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar ce active">14 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar ce">8 SP</div></div>
+    <div class="gantt-cell"><div class="gantt-bar ce">7 SP</div></div>
+    <div class="gantt-cell gantt-empty"></div>
+  </div>
+
+  <div style="margin-top:1.5rem; display:flex; gap:2rem; font-size:0.78rem; color:var(--text-muted);">
+    <span><span style="display:inline-block;width:40px;height:10px;border-radius:4px;background:linear-gradient(90deg, rgba(108,138,255,0.9), rgba(108,138,255,0.5));vertical-align:middle;margin-right:0.3rem;"></span> Primary workload (dark bar)</span>
+    <span><span style="display:inline-block;width:40px;height:10px;border-radius:4px;background:linear-gradient(90deg, rgba(108,138,255,0.5), rgba(108,138,255,0.25));vertical-align:middle;margin-right:0.3rem;"></span> Supporting work (light bar)</span>
+    <span><span style="display:inline-block;width:40px;height:10px;border-radius:4px;background:var(--surface);border:1px solid var(--border);vertical-align:middle;margin-right:0.3rem;"></span> No work in phase</span>
+  </div>
+
+  <h3 style="margin-top:2.5rem; margin-bottom:1rem;">Parallelization Opportunities</h3>
+  <div class="split">
+    <div class="card">
+      <h3 class="text-green">Can Run in Parallel</h3>
+      <ul style="font-size:0.85rem; color:var(--text-muted); padding-left:1.2rem; margin-top:0.5rem; line-height:1.8;">
+        <li><strong>Phase 1:</strong> SRE infra (Pub/Sub, Bifrost, Sentry) runs parallel to DBA Firestore setup and CE scaffold</li>
+        <li><strong>Phase 2:</strong> All 12 investigation agents can be developed in parallel once GCP wrappers + Bifrost client are done</li>
+        <li><strong>Phase 3:</strong> Entra app (SRE) can start while Phase 2 CE work is in progress</li>
+        <li><strong>Phase 4:</strong> DBA dedup queries can start as soon as Firestore setup is done (parallel to Phase 2 CE work)</li>
+        <li><strong>Phase 5:</strong> KB queries (DBA) can start parallel to Phase 3/4 CE work</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="text-red">Must Be Sequential</h3>
+      <ul style="font-size:0.85rem; color:var(--text-muted); padding-left:1.2rem; margin-top:0.5rem; line-height:1.8;">
+        <li><strong>1.1 Repo</strong> must complete before any code work begins</li>
+        <li><strong>1.7 Firestore Setup</strong> must complete before Firestore Tools, dedup, or KB queries</li>
+        <li><strong>Tier-1 agents</strong> must complete before Synthesis agent</li>
+        <li><strong>ADK Wiring</strong> must complete before any Phase 6 testing</li>
+        <li><strong>E2E Test</strong> must pass before Load Test</li>
+        <li><strong>Entra App</strong> must complete before any Teams code</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== STORIES FLAGGED FOR SPLITTING ============== -->
+<section>
+  <div class="section-label">Risk Flags</div>
+  <h2>Stories Flagged for Splitting</h2>
+  <p class="subtitle">Stories estimated at 8+ SP should be split before sprint planning. Stories at 5 SP should be reviewed for splitting if velocity data suggests they're too large.</p>
+
+  <table>
+    <thead><tr><th>Story</th><th>SP</th><th>Role</th><th>Suggested Split</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>1.7</strong> Firestore setup (2 collections + compound indexes)</td>
+        <td><div class="sp-badge">3</div></td>
+        <td><span class="role-tag role-dba">DBA</span></td>
+        <td>No split needed &mdash; 2 Firestore collections + compound indexes.</td>
+      </tr>
+      <tr>
+        <td><strong>2.7</strong> 8 Tier-1 investigation agents</td>
+        <td><div class="sp-badge">5</div></td>
+        <td><span class="role-tag role-ce">CE</span></td>
+        <td>Could split by tool dependency: (A) GCP-native agents (Cloud Run Health, GCP Logging, GCP Metrics) &mdash; 3 SP; (B) MCP-based agents (Datadog, Sentry, Deploy, Teams, Known Issues) &mdash; 3 SP</td>
+      </tr>
+      <tr>
+        <td><strong>2.8</strong> 5 Tier-2 investigation agents</td>
+        <td><div class="sp-badge">5</div></td>
+        <td><span class="role-tag role-ce">CE</span></td>
+        <td>Could split by complexity: (A) Simple agents (Pub/Sub, Cache, Auth/Security) &mdash; 3 SP; (B) Complex agents (SQL DBA 10-step checklist, Codebase) &mdash; 3 SP</td>
+      </tr>
+      <tr>
+        <td><strong>2.14</strong> ADK orchestrator wiring</td>
+        <td><div class="sp-badge">5</div></td>
+        <td><span class="role-tag role-ce">CE</span></td>
+        <td>Could split: (A) ParallelAgent + SequentialAgent wiring &mdash; 3 SP; (B) VertexAiSessionService + category dispatch logic &mdash; 3 SP</td>
+      </tr>
+      <tr>
+        <td><strong>2.15</strong> 3 role-based dispatcher agents</td>
+        <td><div class="sp-badge">5</div></td>
+        <td><span class="role-tag role-ce">CE</span></td>
+        <td>Could split: one story per dispatcher (SRE 2 SP, CE 2 SP, DBA 2 SP) if team prefers smaller items</td>
+      </tr>
+      <tr>
+        <td><strong>6.4</strong> Load test (100 concurrent alerts)</td>
+        <td><div class="sp-badge">5</div></td>
+        <td><span class="role-tag role-sre">SRE</span></td>
+        <td>Could split: (A) Test harness + synthetic alert generation &mdash; 3 SP; (B) Dedup verification + Teams spam verification &mdash; 3 SP</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="divider" style="max-width:1200px; margin-left:auto; margin-right:auto;"></div>
+
+<!-- ============== FULL STORY INDEX ============== -->
+<section>
+  <div class="section-label">Reference</div>
+  <h2>Complete Story Index</h2>
+  <p class="subtitle">All 52 stories in a single sortable view.</p>
+
+  <table>
+    <thead><tr><th>#</th><th>Phase</th><th>Role</th><th>SP</th><th>Title</th></tr></thead>
+    <tbody>
+      <tr><td>1.1</td><td>1</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Create ADO repository with ADK canonical layout</td></tr>
+      <tr><td>1.2</td><td>1</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Provision Pub/Sub topic + push subscription with IAM</td></tr>
+      <tr><td>1.3</td><td>1</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Configure Bifrost virtual key + read-only tool allowlists</td></tr>
+      <tr><td>1.4</td><td>1</td><td><span class="role-tag role-sre">SRE</span></td><td>2</td><td>Create Sentry internal integration (read-only scopes)</td></tr>
+      <tr><td>1.5</td><td>1</td><td><span class="role-tag role-sre">SRE</span></td><td>5</td><td>Cloud Run service YAMLs (webhook + orchestrator, 3600s timeout)</td></tr>
+      <tr><td>1.6</td><td>1</td><td><span class="role-tag role-sre">SRE</span></td><td>5</td><td>3-stage ADO pipeline (Build, DeployDev, DeployProd)</td></tr>
+      <tr><td>1.7</td><td>1</td><td><span class="role-tag role-dba">DBA</span></td><td>3</td><td>Firestore setup (2 collections + compound indexes)</td></tr>
+      <tr><td>1.8</td><td>1</td><td><span class="role-tag role-dba">DBA</span></td><td>1</td><td>Firestore IAM permissions</td></tr>
+      <tr><td>1.9</td><td>1</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Scaffold ADK project (FastAPI + ADK runner + health endpoint)</td></tr>
+      <tr><td>1.10</td><td>1</td><td><span class="role-tag role-ce">CE</span></td><td>5</td><td>Webhook frontend (signature validation, Pub/Sub publish)</td></tr>
+      <tr><td>1.11</td><td>1</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Payload sanitizer (injection defense, field truncation)</td></tr>
+      <tr><td>2.1</td><td>2</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>IAM bindings for GCP Logging, Monitoring, Cloud Run APIs</td></tr>
+      <tr><td>2.2</td><td>2</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>GCP client library wrappers (Logging + Monitoring)</td></tr>
+      <tr><td>2.3</td><td>2</td><td><span class="role-tag role-dba">DBA</span></td><td>3</td><td>Firestore tools (CRUD, sessions)</td></tr>
+      <tr><td>2.4</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Classification LlmAgent (11+ extensible categories, deterministic output)</td></tr>
+      <tr><td>2.5</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Historical search tool (Firestore top-3 similar incidents)</td></tr>
+      <tr><td>2.6</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Bifrost MCP client with circuit breaker (30s failover)</td></tr>
+      <tr><td>2.7</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>5</td><td>8 Tier-1 investigation agents (deterministic checklists)</td></tr>
+      <tr><td>2.8</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>5</td><td>5 Tier-2 investigation agents (category-driven dispatch)</td></tr>
+      <tr><td>2.9</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Agent system prompts (15 rules, confidence labels, checklists)</td></tr>
+      <tr><td>2.10</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Config modules (categories, dashboard IDs, service mappings)</td></tr>
+      <tr><td>2.11</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Synthesis LlmAgent (merge findings, Tier-2 dispatch)</td></tr>
+      <tr><td>2.12</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Report Generator LlmAgent (Teams-ready HTML output)</td></tr>
+      <tr><td>2.13</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Investigation checkpointing (write/resume from Firestore)</td></tr>
+      <tr><td>2.14</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>5</td><td>ADK orchestrator wiring (Parallel + Sequential + Agent Engine Sessions)</td></tr>
+      <tr><td>2.15</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>5</td><td>3 role-based dispatcher agents (SRE, CE, DBA)</td></tr>
+      <tr><td>2.16</td><td>2</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Pydantic settings (env vars, feature flags, secrets)</td></tr>
+      <tr><td>3.1</td><td>3</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Entra ID app registration (app-only Graph API permissions)</td></tr>
+      <tr><td>3.2</td><td>3</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Teams client secrets in Secret Manager</td></tr>
+      <tr><td>3.3</td><td>3</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Graph API tool (post/read/reply, client credentials flow)</td></tr>
+      <tr><td>3.4</td><td>3</td><td><span class="role-tag role-ce">CE</span></td><td>5</td><td>Teams message batching (90s buffer, storm aggregation)</td></tr>
+      <tr><td>3.5</td><td>3</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Orchestrator posting rules (rate limits, channel targeting)</td></tr>
+      <tr><td>3.6</td><td>3</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Timer-based channel polling for engineer responses</td></tr>
+      <tr><td>4.1</td><td>4</td><td><span class="role-tag role-dba">DBA</span></td><td>3</td><td>Fast dedup query (Firestore transactions)</td></tr>
+      <tr><td>4.2</td><td>4</td><td><span class="role-tag role-dba">DBA</span></td><td>3</td><td>Semantic dedup query (Vertex AI embed + Firestore compound queries)</td></tr>
+      <tr><td>4.3</td><td>4</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Dedup engine module (orchestrate both passes)</td></tr>
+      <tr><td>4.4</td><td>4</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Merge logic (append alert, update state, correlations)</td></tr>
+      <tr><td>4.5</td><td>4</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Self-exclusion filter (aiops-*-run-ir-* log-only)</td></tr>
+      <tr><td>5.1</td><td>5</td><td><span class="role-tag role-dba">DBA</span></td><td>3</td><td>KB write queries (embed + insert + decision tree update)</td></tr>
+      <tr><td>5.2</td><td>5</td><td><span class="role-tag role-dba">DBA</span></td><td>2</td><td>Firestore compound index tuning + indexes for active incidents</td></tr>
+      <tr><td>5.3</td><td>5</td><td><span class="role-tag role-ce">CE</span></td><td>3</td><td>Debrief LlmAgent (13-question interview via Teams)</td></tr>
+      <tr><td>5.4</td><td>5</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>KB write module (embed incident context, store vector)</td></tr>
+      <tr><td>5.5</td><td>5</td><td><span class="role-tag role-ce">CE</span></td><td>2</td><td>Decision tree update (success/total confidence tracking)</td></tr>
+      <tr><td>6.1</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Dev deploy (webhook + orchestrator to Cloud Run)</td></tr>
+      <tr><td>6.2</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Webhook registration (Datadog, PagerDuty, GCP Monitoring)</td></tr>
+      <tr><td>6.3</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>5</td><td>E2E test (synthetic webhook through full pipeline)</td></tr>
+      <tr><td>6.4</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>5</td><td>Load test (100 concurrent alerts, Firestore dedup + Teams verification)</td></tr>
+      <tr><td>6.5</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Checkpoint/resume test (kill container, verify resume)</td></tr>
+      <tr><td>6.6</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Real alert triage test (trigger Datadog alert in dev)</td></tr>
+      <tr><td>6.7</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Datadog monitors for IR platform itself (self-monitoring)</td></tr>
+      <tr><td>6.8</td><td>6</td><td><span class="role-tag role-sre">SRE</span></td><td>3</td><td>Self-exclusion integration test (verify no feedback loop)</td></tr>
+      <tr><td>6.9</td><td>6</td><td><span class="role-tag role-dba">DBA</span></td><td>3</td><td>KB query accuracy validation (10 samples)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  IR Agent Platform &mdash; ADO Work Breakdown &mdash; May 2026<br>
+  <span style="color: var(--text-muted);">AIOps &middot; acme &middot; 52 stories &middot; 169 SP</span>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1e40af',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#3b82f6',
+      lineColor: '#64748b',
+      secondaryColor: '#4c1d95',
+      tertiaryColor: '#1e293b',
+      fontFamily: 'Segoe UI, system-ui, sans-serif',
+      fontSize: '12px',
+      background: '#1a1d27',
+      mainBkg: '#1e293b',
+      nodeBorder: '#334155',
+      clusterBkg: '#0f172a',
+      clusterBorder: '#334155',
+      edgeLabelBackground: '#1a1d27',
+      nodeTextColor: '#e2e8f0',
+    },
+    flowchart: {
+      curve: 'basis',
+      padding: 15,
+      htmlLabels: true,
+      useMaxWidth: true,
+      nodeSpacing: 30,
+      rankSpacing: 40,
+    },
+  });
+</script>
+<script>
+(function() {
+  function initZoom() {
+    document.querySelectorAll('.diagram-wrap').forEach(function(wrap) {
+      var svg = wrap.querySelector('svg');
+      if (!svg || wrap.querySelector('.zoom-controls')) return;
+      var inner = svg.parentElement;
+      var viewport = document.createElement('div');
+      viewport.className = 'diagram-zoom-viewport';
+      var zoomInner = document.createElement('div');
+      zoomInner.className = 'zoom-inner';
+      var controls = document.createElement('div');
+      controls.className = 'zoom-controls';
+      controls.innerHTML = '<button class="zoom-btn" data-z="in" title="Zoom in">+</button>'
+        + '<button class="zoom-btn" data-z="out" title="Zoom out">&minus;</button>'
+        + '<span class="zoom-level">100%</span>'
+        + '<button class="zoom-btn" data-z="reset" title="Reset">&#x27F2;</button>';
+      inner.parentNode.insertBefore(viewport, inner);
+      viewport.appendChild(controls);
+      zoomInner.appendChild(inner);
+      viewport.appendChild(zoomInner);
+      var scale = 1, tx = 0, ty = 0, dragging = false, sx, sy;
+      var lvl = controls.querySelector('.zoom-level');
+      function upd() {
+        zoomInner.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+        lvl.textContent = Math.round(scale * 100) + '%';
+      }
+      viewport.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        scale = Math.min(4, Math.max(0.25, scale + (e.deltaY > 0 ? -0.1 : 0.1)));
+        upd();
+      }, {passive: false});
+      controls.addEventListener('click', function(e) {
+        var b = e.target.closest('[data-z]');
+        if (!b) return;
+        if (b.dataset.z === 'in') scale = Math.min(4, scale + 0.2);
+        else if (b.dataset.z === 'out') scale = Math.max(0.25, scale - 0.2);
+        else { scale = 1; tx = 0; ty = 0; }
+        upd();
+      });
+      viewport.addEventListener('mousedown', function(e) {
+        if (e.target.closest('.zoom-controls')) return;
+        dragging = true; sx = e.clientX - tx; sy = e.clientY - ty;
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        tx = e.clientX - sx; ty = e.clientY - sy; upd();
+      });
+      document.addEventListener('mouseup', function() { dragging = false; });
+    });
+  }
+  function poll() { document.querySelector('.diagram-wrap svg') ? initZoom() : setTimeout(poll, 150); }
+  document.addEventListener('DOMContentLoaded', function() { setTimeout(poll, 300); });
+})();
+</script>
+</body>
+</html>

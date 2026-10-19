@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Incident Response Agent Platform — Architecture Review</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232735;
+    --border: #2e3348;
+    --text: #e2e4eb;
+    --text-muted: #8b8fa3;
+    --accent: #6c8aff;
+    --accent2: #38bdf8;
+    --green: #34d399;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top:0; left:0; right:0; z-index:100;
+    background: rgba(15,17,23,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; height: 56px;
+  }
+  nav .logo { font-weight: 700; font-size: 1rem; color: var(--accent); letter-spacing: -0.02em; }
+  nav .links { margin-left: auto; display: flex; gap: 1.5rem; }
+  nav .links a {
+    color: var(--text-muted); text-decoration: none; font-size: 0.82rem;
+    font-weight: 500; transition: color 0.2s;
+  }
+  nav .links a:hover { color: var(--text); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 70vh; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center;
+    padding: 8rem 2rem 4rem;
+    background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(108,138,255,0.12) 0%, transparent 70%);
+  }
+  .hero .badge {
+    display: inline-block; padding: 0.3rem 0.9rem; border-radius: 99px;
+    background: rgba(108,138,255,0.12); border: 1px solid rgba(108,138,255,0.25);
+    color: var(--accent); font-size: 0.78rem; font-weight: 600; margin-bottom: 1.5rem;
+    letter-spacing: 0.04em; text-transform: uppercase;
+  }
+  .hero h1 {
+    font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 800;
+    letter-spacing: -0.03em; line-height: 1.15; max-width: 800px;
+    background: linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .hero p {
+    margin-top: 1.2rem; font-size: 1.15rem; color: var(--text-muted);
+    max-width: 640px; line-height: 1.7;
+  }
+
+  /* ── SECTIONS ── */
+  section { padding: 5rem 2rem; max-width: 1200px; margin: 0 auto; }
+  section.wide { max-width: 1400px; }
+  .section-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 0.5rem;
+  }
+  h2 {
+    font-size: 2rem; font-weight: 700; letter-spacing: -0.02em;
+    margin-bottom: 0.6rem;
+  }
+  h3 {
+    font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .subtitle { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 2.5rem; max-width: 700px; }
+
+  /* ── CARDS ── */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
+  .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .card .icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; margin-bottom: 1rem;
+  }
+  .card h3 { font-size: 1rem; margin-bottom: 0.4rem; }
+  .card p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.55; }
+  .card .tag {
+    display: inline-block; padding: 0.15rem 0.55rem; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 600; margin-top: 0.8rem;
+  }
+
+  /* ── STAT CARDS ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; margin-bottom: 3rem; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem; text-align: center;
+  }
+  .stat .number {
+    font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat .label { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.3rem; font-weight: 500; }
+
+  /* ── DIAGRAM CONTAINER ── */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem;
+    margin: 2rem 0; overflow-x: auto;
+  }
+  .diagram-wrap .mermaid { display: flex; justify-content: center; }
+  .diagram-wrap .caption {
+    text-align: center; font-size: 0.8rem; color: var(--text-muted);
+    margin-top: 1rem; font-style: italic;
+  }
+
+  /* ZOOM CONTROLS */
+  .diagram-zoom-viewport {
+    overflow: hidden; cursor: grab; position: relative;
+    min-height: 100px;
+  }
+  .diagram-zoom-viewport:active { cursor: grabbing; }
+  .diagram-zoom-viewport .zoom-inner {
+    transition: transform 0.1s ease-out; transform-origin: center center;
+    display: flex; justify-content: center;
+  }
+  .zoom-controls {
+    position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; z-index: 10;
+  }
+  .zoom-btn {
+    width: 30px; height: 30px; border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text-muted); border-radius: 6px; cursor: pointer; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; user-select: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  .zoom-btn:hover { background: var(--accent); color: #fff; }
+  .zoom-level {
+    font-size: 11px; color: var(--text-muted); display: flex; align-items: center;
+    padding: 0 4px; font-variant-numeric: tabular-nums;
+  }
+
+  /* ── TABLES ── */
+  table {
+    width: 100%; border-collapse: collapse; font-size: 0.88rem;
+    background: var(--surface); border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  thead { background: var(--surface2); }
+  th {
+    text-align: left; padding: 0.8rem 1rem;
+    font-weight: 600; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text-muted); border-bottom: 1px solid var(--border);
+  }
+  td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: rgba(108,138,255,0.04); }
+
+  /* ── COLORED ACCENTS ── */
+  .bg-blue { background: rgba(108,138,255,0.12); color: var(--accent); }
+  .bg-green { background: rgba(52,211,153,0.12); color: var(--green); }
+  .bg-amber { background: rgba(251,191,36,0.12); color: var(--amber); }
+  .bg-red { background: rgba(248,113,113,0.12); color: var(--red); }
+  .bg-purple { background: rgba(167,139,250,0.12); color: var(--purple); }
+  .bg-pink { background: rgba(244,114,182,0.12); color: var(--pink); }
+  .text-green { color: var(--green); }
+  .text-amber { color: var(--amber); }
+  .text-red { color: var(--red); }
+  .text-accent { color: var(--accent); }
+  .text-muted { color: var(--text-muted); }
+
+  /* ── TIER LABELS ── */
+  .tier { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.72rem; font-weight: 700; }
+  .tier-1 { background: rgba(56,189,248,0.15); color: var(--accent2); }
+  .tier-2 { background: rgba(167,139,250,0.15); color: var(--purple); }
+
+  /* ── FLOW STEPS ── */
+  .flow { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; }
+  .flow-step {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0.8rem 1.2rem; font-size: 0.85rem; font-weight: 500;
+    min-width: 140px; text-align: center;
+  }
+  .flow-arrow { color: var(--accent); font-size: 1.4rem; }
+
+  /* ── SPLIT LAYOUT ── */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+  .split.wide-left { grid-template-columns: 2fr 1fr; }
+  .split.wide-right { grid-template-columns: 1fr 2fr; }
+
+  /* ── PILL LIST ── */
+  .pill-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+  .pill {
+    display: inline-block; padding: 0.3rem 0.8rem; border-radius: 99px;
+    font-size: 0.78rem; font-weight: 600; border: 1px solid;
+  }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border); margin: 4rem 0; }
+
+  /* ── RULE LIST ── */
+  .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 0.8rem; }
+  .rule {
+    display: flex; gap: 0.8rem; padding: 0.8rem 1rem;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; font-size: 0.85rem;
+  }
+  .rule .num {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700;
+    background: rgba(108,138,255,0.12); color: var(--accent);
+  }
+
+  /* ── PHASE TIMELINE ── */
+  .timeline { position: relative; padding-left: 2.5rem; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0.9rem; top: 0; bottom: 0;
+    width: 2px; background: var(--border);
+  }
+  .timeline-item { position: relative; margin-bottom: 2rem; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -1.65rem; top: 0.5rem;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--bg);
+  }
+  .timeline-item h3 { font-size: 1.1rem; }
+  .timeline-item p { font-size: 0.88rem; color: var(--text-muted); }
+  .timeline-item .tasks { margin-top: 0.6rem; }
+  .timeline-item .tasks li {
+    font-size: 0.84rem; color: var(--text-muted); margin-bottom: 0.25rem;
+    list-style: none; padding-left: 1rem; position: relative;
+  }
+  .timeline-item .tasks li::before {
+    content: ''; position: absolute; left: 0; top: 0.55rem;
+    width: 5px; height: 5px; border-radius: 50%; background: var(--border);
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding: 3rem 2rem;
+    color: var(--text-muted); font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 900px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .card-grid-3, .card-grid-4 { grid-template-columns: 1fr; }
+    .split, .split.wide-left, .split.wide-right { grid-template-columns: 1fr; }
+    nav .links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="logo">IR Agent Platform</span>
+  <div class="links">
+    <a href="#problem">Problem</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#investigation">Investigation</a>
+    <a href="#agents">Agents</a>
+    <a href="#security">Security</a>
+    <a href="#data">Data</a>
+    <a href="#roadmap">Roadmap</a>
+  </div>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="hero">
+  <span class="badge">Architecture Review &mdash; Phase 1</span>
+  <h1>Incident Response Agent Platform</h1>
+  <p>An autonomous triage system that receives alerts, dispatches parallel investigation agents, posts findings to Teams, and builds institutional memory &mdash; replacing manual, inconsistent, and knowledge-lossy incident response.</p>
+</div>
+
+<!-- ═══════════════ PROBLEM ═══════════════ -->
+<section id="problem">
+  <div class="section-label">The Problem</div>
+  <h2>Manual Triage Doesn't Scale</h2>
+  <p class="subtitle">Alert volume across Teams channels and Datadog monitors demands consistent, fast triage &mdash; but every investigation starts from zero.</p>
+
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="number">316</div>
+      <div class="label">Datadog Monitors Active</div>
+    </div>
+    <div class="stat">
+      <div class="number">24</div>
+      <div class="label">Sentry Projects (164K events/day)</div>
+    </div>
+    <div class="stat">
+      <div class="number">0</div>
+      <div class="label">Institutional Memory Retained</div>
+    </div>
+    <div class="stat">
+      <div class="number">6+</div>
+      <div class="label">Tools Checked Per Investigation</div>
+    </div>
+  </div>
+
+  <!-- Source breakdown -->
+  <div style="margin: 1.5rem auto; max-width: 720px;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+      <thead>
+        <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted); text-align:left;">
+          <th style="padding:0.5rem 1rem;">Alert Source</th>
+          <th style="padding:0.5rem 1rem;">Observed Volume</th>
+          <th style="padding:0.5rem 1rem;">Period</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding:0.5rem 1rem; color:var(--red); font-weight:600;">Platform-Alerts (Teams)</td>
+          <td style="padding:0.5rem 1rem;">50+ threads</td>
+          <td style="padding:0.5rem 1rem; color:var(--text-muted);">10 days (May 8&ndash;18)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding:0.5rem 1rem; color:var(--amber); font-weight:600;">Crew SpecOps (Teams)</td>
+          <td style="padding:0.5rem 1rem;">50+ threads</td>
+          <td style="padding:0.5rem 1rem; color:var(--text-muted);">33 days (Apr 16&ndash;May 18)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding:0.5rem 1rem; color:var(--purple); font-weight:600;">Critical Bug (Teams)</td>
+          <td style="padding:0.5rem 1rem;">~13 incidents</td>
+          <td style="padding:0.5rem 1rem; color:var(--text-muted);">6 months (Nov&ndash;May)</td>
+        </tr>
+        <tr>
+          <td style="padding:0.5rem 1rem; color:var(--accent); font-weight:600;">Datadog &rarr; PagerDuty</td>
+          <td style="padding:0.5rem 1rem;">monitors with PD routing</td>
+          <td style="padding:0.5rem 1rem; color:var(--text-muted);">Continuous</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.72rem; color:var(--text-muted); margin-top:0.5rem; text-align:center;">
+      Source: Teams Graph API (May 2026) &middot; Datadog Monitors API &middot; infra-context/domains/observability.md
+    </p>
+  </div>
+
+  <div class="card-grid card-grid-3">
+    <div class="card">
+      <div class="icon bg-red">&#x23F1;</div>
+      <h3>Slow Start</h3>
+      <p>Engineers manually check Datadog, Sentry, GCP logs, ADO, Teams &mdash; same steps every time, different order, inconsistent depth.</p>
+    </div>
+    <div class="card">
+      <div class="icon bg-amber">&#x1F50D;</div>
+      <h3>Knowledge Lost</h3>
+      <p>Investigation context lives in the engineer's head. When an incident closes, the "why" and "how we found it" disappear.</p>
+    </div>
+    <div class="card">
+      <div class="icon bg-purple">&#x1F504;</div>
+      <h3>Inconsistent</h3>
+      <p>Quality depends on who's on-call. Junior engineers miss signals that senior engineers catch automatically.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SOLUTION OVERVIEW ═══════════════ -->
+<section id="architecture">
+  <div class="section-label">The Solution</div>
+  <h2>Autonomous Investigation, Human Decision-Making</h2>
+  <p class="subtitle">Phase 1 is read-only and human-in-the-loop. The platform investigates; engineers decide.</p>
+
+  <div class="flow">
+    <div class="flow-step" style="border-color: var(--green);">Alert Arrives<br><span class="text-muted" style="font-size:0.75rem;">Datadog &middot; PagerDuty &middot; GCP &middot; Teams</span></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color: var(--amber);">Sanitize &amp; Dedup<br><span class="text-muted" style="font-size:0.75rem;">Payload safety &middot; Dedup engine</span></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color: var(--accent);">Classify<br><span class="text-muted" style="font-size:0.75rem;">10 functional groups + extensible</span></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color: var(--accent2);">Investigate<br><span class="text-muted" style="font-size:0.75rem;">9-14 parallel agents</span></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color: var(--purple);">Synthesize<br><span class="text-muted" style="font-size:0.75rem;">Merge &middot; identify gaps</span></div>
+    <div class="flow-arrow">&rarr;</div>
+    <div class="flow-step" style="border-color: var(--green);">Report to Teams<br><span class="text-muted" style="font-size:0.75rem;">Batched &middot; rate-limited</span></div>
+  </div>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+graph TD
+    subgraph Sources["Alert Sources"]
+        DD["Datadog"]
+        PD["PagerDuty"]
+        GCPMon["GCP Monitoring"]
+        TeamsIn["Teams Channels"]
+    end
+
+    subgraph Ingestion["Ingestion Layer"]
+        WH["Webhook Frontend — Cloud Run"]
+        SANITIZE["Payload Sanitizer"]
+        PS["Pub/Sub — incident-alerts"]
+    end
+
+    subgraph Orchestration["Orchestration Layer"]
+        DEDUP["Dedup Engine"]
+        ORCH["Orchestrator — Agent Engine — ADK 2.2.0"]
+        STATE[("Session State — Agent Engine Sessions (VertexAiSessionService)")]
+        CHKPT["Checkpoint + Resume"]
+    end
+
+    subgraph Agents["Investigation Agents"]
+        direction LR
+        subgraph T1["Tier 1 — Always Parallel"]
+            direction TB
+            CR["Cloud Run Health"]
+            CE["Compute Engine Health"]
+            LOG["GCP Logging"]
+            MET["GCP Metrics"]
+            DDOG["Datadog Obs"]
+            SENT["Sentry Error"]
+            DEP["Deploy Corr"]
+            TCH["Teams Context"]
+            KI["Known Issues"]
+        end
+        subgraph T2["Tier 2 — Conditional"]
+            direction TB
+            PUB["Pub/Sub"]
+            CACHE["Cache"]
+            SQL["SQL DBA"]
+            AUTH["Auth/Security"]
+            CODE["Codebase"]
+        end
+    end
+
+    subgraph Gateway["Bifrost Gateway"]
+        BF["llm-gateway.internal.example — Read-Only Allowlists"]
+        CB["Circuit Breaker → Direct Vertex AI"]
+        LLM["LLM Providers"]
+        MCP["MCP Servers"]
+    end
+
+    subgraph Data["Data Layer"]
+        FS[("Firestore")]
+    end
+
+    subgraph HumanIF["Human Interface"]
+        BOT["Teams Bot — 90s Batching"]
+        ENG["Engineers"]
+    end
+
+    Sources --> WH
+    WH --> SANITIZE
+    SANITIZE --> PS
+    PS --> DEDUP
+    DEDUP --> ORCH
+    ORCH --- STATE
+    ORCH --- CHKPT
+    ORCH --> T1
+    ORCH -.->|category-based| T2
+    T1 -->|findings| ORCH
+    T2 -->|findings| ORCH
+    ORCH <--> BF
+    BF --> CB
+    CB --> LLM
+    BF --> MCP
+    ORCH --> FS
+    FS -->|past incidents + sessions| ORCH
+    ORCH --> BOT
+    BOT <--> ENG
+
+    style Sources fill:#1e293b,stroke:#334155,color:#e2e8f0
+    style Ingestion fill:#1e293b,stroke:#334155,color:#e2e8f0
+    style Orchestration fill:#1e293b,stroke:#334155,color:#e2e8f0
+    style Agents fill:#1e293b,stroke:#334155,color:#e2e8f0
+    style T1 fill:#172554,stroke:#1e40af,color:#93c5fd
+    style T2 fill:#2e1065,stroke:#6d28d9,color:#c4b5fd
+    style Gateway fill:#1e293b,stroke:#334155,color:#e2e8f0
+    style Data fill:#1e293b,stroke:#334155,color:#e2e8f0
+    style HumanIF fill:#1e293b,stroke:#334155,color:#e2e8f0
+    </pre>
+    <div class="caption">System Overview &mdash; All external tool access routes through Bifrost with per-server read-only allowlists</div>
+  </div>
+</section>
+
+<!-- ═══════════════ VALIDATED RESULTS ═══════════════ -->
+<section>
+  <div class="section-label">Validated Results</div>
+  <h2>End-to-End Test Performance</h2>
+  <p class="subtitle">Automated evaluation against 3 fixed scenarios: Cloud Run 503, WebCore Slowdown, Pub/Sub Backlog. All tests passing.</p>
+
+  <div class="stat-grid">
+    <div class="stat">
+      <div class="number text-green">3/3</div>
+      <div class="label">Scenarios Passing</div>
+    </div>
+    <div class="stat">
+      <div class="number text-green">12/12</div>
+      <div class="label">Classification Fields Correct</div>
+    </div>
+    <div class="stat">
+      <div class="number text-green">18/18</div>
+      <div class="label">Report Sections Complete</div>
+    </div>
+    <div class="stat">
+      <div class="number text-accent">~5min</div>
+      <div class="label">Wall Clock Time</div>
+    </div>
+  </div>
+
+  <div class="split" style="margin-top: 2rem;">
+    <div>
+      <h3>Cost Model</h3>
+      <table>
+        <thead><tr><th>Component</th><th>Per Investigation</th></tr></thead>
+        <tbody>
+          <tr><td>LLM tokens (claude-sonnet-4-6)</td><td>~$1.50 - $2.00</td></tr>
+          <tr><td>Embeddings (Vertex AI)</td><td>&lt; $0.01</td></tr>
+          <tr><td>Cloud Run compute</td><td>~$0.30 - $0.50</td></tr>
+          <tr><td>Firestore queries</td><td>~$0.03</td></tr>
+          <tr><td><strong>Total per investigation</strong></td><td class="text-accent"><strong>~$2 - $3</strong></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.82rem; color:var(--text-muted); margin-top:0.8rem;">At 100 incidents/month: ~$250/month. Manual triage: 30-60 min/incident. Agent triage: 3-5 min.</p>
+    </div>
+    <div>
+      <h3>Deployment Info</h3>
+      <table>
+        <thead><tr><th>Environment</th><th>Details</th></tr></thead>
+        <tbody>
+          <tr><td>Agent Engine ID</td><td><code style="font-size:0.75rem;">aiops-stag-agent-ir-agent-platform-us-c1</code></td></tr>
+          <tr><td>Project</td><td>webcore-aiops-staging</td></tr>
+          <tr><td>Region</td><td>us-central1</td></tr>
+          <tr><td>Model</td><td>claude-sonnet-4-6 via Vertex AI</td></tr>
+          <tr><td>Model Routing</td><td>LiteLlm → Bifrost → Vertex AI</td></tr>
+          <tr><td>MCP Gateway</td><td>Bifrost (llm-gateway.internal.example)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="background: var(--surface); border: 2px solid var(--green); border-radius: 12px; padding: 1.5rem; margin-top: 2rem; text-align: center;">
+    <h3 style="color: var(--green); margin-bottom: 0.5rem;">Time Savings</h3>
+    <p style="font-size: 1.1rem; color: var(--text);">
+      <strong style="color: var(--text-muted);">Manual triage:</strong> 30-60 min &nbsp; | &nbsp;
+      <strong style="color: var(--green);">Agent triage:</strong> 3-5 min &nbsp; &rarr; &nbsp;
+      <strong style="color: var(--accent);">10-20x faster</strong>
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════ KEY DECISIONS ═══════════════ -->
+<section>
+  <div class="section-label">Key Decisions</div>
+  <h2>Technology Stack &amp; Trade-offs</h2>
+  <p class="subtitle">Each choice was evaluated against alternatives. Here's what we chose and why.</p>
+
+  <div class="card-grid card-grid-4" style="margin-bottom: 2rem;">
+    <div class="card">
+      <h3 class="text-accent">Framework</h3>
+      <p><strong>Google ADK 2.2.0</strong></p>
+      <p>LlmAgent, SequentialAgent, ParallelAgent, AgentTool, session persistence out of the box. Agents are Python functions &mdash; extractable if ADK proves limiting.</p>
+    </div>
+    <div class="card">
+      <h3 class="text-accent">Hosting</h3>
+      <p><strong>Cloud Run</strong></p>
+      <p>1 orchestrator per incident for isolation. Webhook frontend scales independently. Max 3600s timeout with checkpoint/resume for long investigations.</p>
+    </div>
+    <div class="card">
+      <h3 class="text-accent">LLM Gateway</h3>
+      <p><strong>Bifrost</strong></p>
+      <p>Semantic cache, virtual keys with budget caps, MCP tool aggregation. Circuit breaker falls back to direct Vertex AI on gateway failure.</p>
+    </div>
+    <div class="card">
+      <h3 class="text-accent">Data Store</h3>
+      <p><strong>Firestore</strong></p>
+      <p>Firestore Native mode in aiops-dev-project (us-central1). Stores KB, session state, dedup windows. Semantic similarity via Vertex AI Vector Search (Phase 2).</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Decision</th><th>Chose</th><th>Over</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Agent communication</td><td><strong>Hub-and-spoke</strong></td><td>A2A protocol</td><td>Simpler, debuggable, appropriate for Phase 1. A2A deferred until ADK ships GA.</td></tr>
+      <tr><td>Session state</td><td><strong>Agent Engine Sessions (VertexAiSessionService)</strong></td><td>InMemorySessionService</td><td>Survives container restarts. Red team found in-memory state loss was critical risk.</td></tr>
+      <tr><td>Dedup engine</td><td><strong>Firestore-backed dedup</strong></td><td>In-memory per instance</td><td>Webhook scales to 10 instances. In-memory dedup can't share state &mdash; creates duplicate incidents.</td></tr>
+      <tr><td>Teams bot</td><td><strong>Graph API dumb pipe</strong></td><td>Bot Framework SDK</td><td>Orchestrator controls all logic. Bot is stateless &mdash; no framework overhead.</td></tr>
+      <tr><td>Agent design</td><td><strong>Functional scope</strong></td><td>Tool-specific scope</td><td>Agent scope = investigation question, not tool boundary. SQL DBA agent uses Datadog tools &mdash; that's fine.</td></tr>
+      <tr><td>Phase 1 mode</td><td><strong>Read-only + human-in-the-loop</strong></td><td>Autonomous remediation</td><td>Build trust first. Enforce read-only at both Bifrost (tool allowlists) and agent prompts.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════ INVESTIGATION PIPELINE ═══════════════ -->
+<section id="investigation" class="wide">
+  <div class="section-label">Investigation Pipeline</div>
+  <h2>How an Alert Becomes a Finding</h2>
+  <p class="subtitle">Every alert follows the same deterministic path. Agents execute numbered checklists &mdash; no open-ended exploration.</p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TD
+    Start(["Alert Arrives"]) --> Sanitize["Payload Sanitizer<br/>Strip HTML, truncate fields,<br/>escape injection patterns"]
+    Sanitize --> SelfCheck{"Source = IR platform?"}
+    SelfCheck -->|Yes| Discard["Log + discard<br/>No investigation"]
+    SelfCheck -->|No| Dedup
+
+    subgraph Dedup["Two-Pass Dedup — Dedup Engine"]
+        D1{"Pass 1: Same service +<br/>alert type in 5-min window?"}
+        D1 -->|Yes| Merge["Merge into existing"]
+        D1 -->|No| D2{"Pass 2: Semantic<br/>similarity &gt; 0.85?"}
+        D2 -->|Yes| Correlate["Correlate + merge"]
+        D2 -->|No| NewIncident["New Incident"]
+    end
+
+    NewIncident --> Classify["Classification Agent<br/>Categorize into 1 of 11 types"]
+    Classify --> History["Historical Search<br/>Firestore top-3 similar incidents"]
+    History --> Tier1
+
+    subgraph Tier1["Tier 1 — 9 Agents in Parallel"]
+        direction LR
+        A1["Cloud Run<br/>Health"]
+        A1b["Compute Engine<br/>Health"]
+        A2["GCP<br/>Logging"]
+        A3["GCP<br/>Metrics"]
+        A4["Datadog<br/>Observability"]
+        A5["Sentry<br/>Error"]
+        A6["Deploy<br/>Correlation"]
+        A7["Teams<br/>Context"]
+        A8["Known<br/>Issues"]
+    end
+
+    Tier1 --> Checkpoint1["Checkpoint findings → Firestore"]
+    Checkpoint1 --> Synth1["Synthesis Agent<br/>Merge findings, identify gaps"]
+    Synth1 --> T2Decision{"Category-based<br/>Tier 2 dispatch?"}
+
+    T2Decision -->|No| Report
+    T2Decision -->|Yes| Tier2
+
+    subgraph Tier2["Tier 2 — Conditional Agents"]
+        direction LR
+        B1["Pub/Sub"]
+        B2["Cache"]
+        B3["SQL DBA"]
+        B4["Auth/Security"]
+        B5["Codebase"]
+    end
+
+    Tier2 --> Checkpoint2["Checkpoint findings → Firestore"]
+    Checkpoint2 --> Synth2["Re-synthesize"]
+    Synth2 --> Report["Report Generator"]
+    Report --> TeamsBatch["Teams Post<br/>90s batch window<br/>Rate limited"]
+    TeamsBatch --> KB["Write to Knowledge Base"]
+    KB --> End(["Complete"])
+
+    style Start fill:#166534,stroke:#22c55e,color:#f0fdf4
+    style End fill:#166534,stroke:#22c55e,color:#f0fdf4
+    style Discard fill:#7f1d1d,stroke:#ef4444,color:#fef2f2
+    style Tier1 fill:#172554,stroke:#1e40af,color:#93c5fd
+    style Tier2 fill:#2e1065,stroke:#6d28d9,color:#c4b5fd
+    style Dedup fill:#1c1917,stroke:#78716c,color:#e7e5e4
+    style Classify fill:#451a03,stroke:#d97706,color:#fef3c7
+    style Synth1 fill:#451a03,stroke:#d97706,color:#fef3c7
+    style Synth2 fill:#451a03,stroke:#d97706,color:#fef3c7
+    style Report fill:#451a03,stroke:#d97706,color:#fef3c7
+    style Checkpoint1 fill:#0c4a6e,stroke:#0ea5e9,color:#e0f2fe
+    style Checkpoint2 fill:#0c4a6e,stroke:#0ea5e9,color:#e0f2fe
+    </pre>
+    <div class="caption">Full investigation pipeline &mdash; from raw alert to Teams post. Checkpoints enable resume on container restart.</div>
+  </div>
+</section>
+
+<!-- ═══════════════ ROUTING DECISION TREE ═══════════════ -->
+<section class="wide">
+  <div class="section-label">Routing Logic</div>
+  <h2>Functional Group &rarr; Agent Dispatch Matrix</h2>
+  <p class="subtitle">10 functional investigation groups determine which Tier 2 agents are conditionally dispatched. Performance is the triage gateway. <a href="classification-trees.html" style="color:var(--accent);">Full classification decision trees &rarr;</a></p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+flowchart TD
+    ClassAgent["Classification Agent"] --> Decision{"Functional Group"}
+
+    Decision -->|deploy signals| G1["Deploy / Release"]
+    Decision -->|SQL signals| G2["Database / SQL"]
+    Decision -->|saturation signals| G3["Resource Contention"]
+    Decision -->|container signals| G4["Cloud Infrastructure"]
+    Decision -->|error signals| G5["Code / Application"]
+    Decision -->|data signals| G6["Data Integrity"]
+    Decision -->|queue signals| G7["Messaging / Async"]
+    Decision -->|latency signals| G8["Performance<br/>TRIAGE GATEWAY"]
+    Decision -->|auth signals| G9["Security / Auth"]
+    Decision -->|flapping signals| G10["Monitoring / Meta"]
+    Decision -.->|future| GX["X — extensible"]
+
+    G1 &amp; G2 &amp; G3 &amp; G4 &amp; G5 &amp; G6 &amp; G7 &amp; G9 &amp; G10 --> Tier1All["Tier 1 — All 8 Agents Always"]
+    GX -.-> Tier1All
+
+    G8 -->|triage| Tier1All
+    G8 -.->|routes to specialist| G2
+    G8 -.->|routes to specialist| G3
+    G8 -.->|routes to specialist| G4
+    G8 -.->|routes to specialist| G5
+
+    Tier1All --> Synthesis["Synthesis Agent"]
+    Synthesis --> T2Route{"Tier 2 Dispatch"}
+
+    T2Route -->|Deploy| T2_DR["Tier 1 sufficient"]
+    T2Route -->|Database| T2_SQL["SQL DBA — Mandatory"]
+    T2_SQL --> T2_SQL_E{"Query source?"}
+    T2_SQL_E -->|Yes| T2_SQL_C["+ Codebase"]
+    T2_SQL_E -->|No| T2_SQL_O["SQL DBA only"]
+    T2Route -->|Resource| T2_RC{"Which resource?"}
+    T2_RC -->|Cache| T2_RC_C["Cache Agent"]
+    T2_RC -->|SQL connections| T2_RC_S["SQL DBA"]
+    T2Route -->|Cloud Infra| T2_CI["Tier 1 sufficient"]
+    T2Route -->|Code/App| T2_CA{"Root cause unclear?"}
+    T2_CA -->|Yes| T2_CA_C["Codebase Agent"]
+    T2_CA -->|No| T2_CA_S["Skip Tier 2"]
+    T2Route -->|Data Integrity| T2_DI["SQL DBA + Codebase — Always"]
+    T2Route -->|Messaging| T2_MA["Pub/Sub — Mandatory"]
+    T2_MA --> T2_MA_E{"Job touches DB?"}
+    T2_MA_E -->|Yes| T2_MA_S["+ SQL DBA"]
+    T2_MA_E -->|No| T2_MA_O["Pub/Sub only"]
+    T2Route -->|Security| T2_AS["Auth/Security — Mandatory"]
+    T2Route -->|Monitoring| T2_MM["Tier 1 sufficient; may reclassify"]
+
+    style ClassAgent fill:#451a03,stroke:#d97706,color:#fef3c7
+    style Synthesis fill:#451a03,stroke:#d97706,color:#fef3c7
+    style Tier1All fill:#172554,stroke:#1e40af,color:#93c5fd
+    style Decision fill:#831843,stroke:#ec4899,color:#fce7f3
+    style T2Route fill:#831843,stroke:#ec4899,color:#fce7f3
+    style G8 fill:#7f1d1d,stroke:#ef4444,color:#fef2f2
+    style GX stroke-dasharray: 5 5
+    </pre>
+    <div class="caption">Functional group routing &mdash; Performance is a triage gateway that identifies the root domain and hands off to the specialist group. <a href="classification-trees.html" style="color:var(--accent);">Full decision trees &rarr;</a></div>
+  </div>
+
+  <!-- Compact dispatch matrix table -->
+  <table style="margin-top: 1.5rem;">
+    <thead><tr><th>Functional Group</th><th>Original Categories</th><th>Tier 2 Dispatch</th><th>Condition</th></tr></thead>
+    <tbody>
+      <tr><td style="color:var(--orange);"><strong>Deploy / Release</strong></td><td><code>deploy-release</code></td><td>&mdash;</td><td>Tier 1 sufficient</td></tr>
+      <tr><td style="color:var(--amber);"><strong>Database / SQL</strong></td><td><code>sql-database</code></td><td><strong>SQL DBA</strong> (mandatory) + Codebase</td><td>Codebase if query source needed</td></tr>
+      <tr><td style="color:var(--accent2);"><strong>Resource Contention</strong></td><td><code>cloud-infrastructure</code>, <code>performance</code></td><td>Cache, SQL DBA</td><td>Based on which resource is saturated</td></tr>
+      <tr><td style="color:var(--accent);"><strong>Cloud Infrastructure</strong></td><td><code>cloud-infrastructure</code></td><td>&mdash;</td><td>Tier 1 sufficient</td></tr>
+      <tr><td style="color:var(--green);"><strong>Code / Application</strong></td><td><code>application-errors</code>, <code>business-logic</code></td><td>Codebase</td><td>Only if root cause unclear from Tier 1</td></tr>
+      <tr><td style="color:#f472b6;"><strong>Data Integrity</strong></td><td><code>data-integrity</code></td><td>SQL DBA + Codebase</td><td>Always both</td></tr>
+      <tr><td style="color:var(--purple);"><strong>Messaging / Async</strong></td><td><code>pubsub-messaging</code>, <code>scheduled-jobs</code></td><td><strong>Pub/Sub</strong> (mandatory) + SQL DBA</td><td>SQL DBA if job touches DB</td></tr>
+      <tr style="background:rgba(248,113,113,0.06);"><td style="color:var(--red);"><strong>Performance</strong> <span style="font-size:0.7rem;background:rgba(248,113,113,0.15);padding:0.15rem 0.4rem;border-radius:4px;">GATEWAY</span></td><td><code>performance</code></td><td>Routes to specialist group</td><td>Identifies root domain, hands off</td></tr>
+      <tr><td style="color:#ef4444;"><strong>Security / Auth</strong></td><td><code>auth-security</code></td><td><strong>Auth/Security</strong> (mandatory)</td><td>Always</td></tr>
+      <tr><td style="color:var(--text-muted);"><strong>Monitoring / Meta</strong></td><td><code>monitoring-meta</code></td><td>&mdash;</td><td>Tier 1 sufficient; may reclassify to real group</td></tr>
+      <tr style="border-top: 2px dashed var(--border);">
+        <td><code style="color:var(--text-muted);">X &mdash; extensible</code></td>
+        <td style="color:var(--text-muted);">future</td>
+        <td style="color:var(--text-muted);">TBD per group</td>
+        <td style="color:var(--text-muted);">New groups added as patterns emerge from KB</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════ AGENT ROSTER ═══════════════ -->
+<section id="agents">
+  <div class="section-label">Agent Architecture</div>
+  <h2>16 Deterministic Investigation Agents</h2>
+  <p class="subtitle">Each agent answers one investigation question via a numbered checklist. No open-ended exploration. Agent scope = investigation question, not tool boundary.</p>
+
+  <h3 style="margin-top:2rem; margin-bottom:1rem;"><span class="tier tier-1">TIER 1</span> &nbsp; Always Dispatched in Parallel</h3>
+  <div class="card-grid" style="grid-template-columns: repeat(3, 1fr);">
+    <div class="card">
+      <div class="icon bg-blue">&#x2601;</div>
+      <h3>Cloud Run Health</h3>
+      <p>"Is the service's compute infrastructure healthy?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: service status, scaling, probes, OOMs, resource utilization</p>
+      <span class="tag bg-blue">gcloud + GCP Monitoring</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-blue">&#x1F5A5;</div>
+      <h3>Compute Engine Health</h3>
+      <p>"Are VMs and instance groups healthy?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: instance status, autoscaling, health checks, disk/network, recent events</p>
+      <span class="tag bg-blue">gcloud + GCP Monitoring</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-blue">&#x1F4CB;</div>
+      <h3>GCP Logging</h3>
+      <p>"What errors and warnings appeared around alert time?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: error logs, aggregation, stack traces, audit logs, cache errors</p>
+      <span class="tag bg-blue">GCP Logging API</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-blue">&#x1F4C8;</div>
+      <h3>GCP Metrics</h3>
+      <p>"What do alert policies and metric trends show?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: policies, incidents, time series, trend classification, cross-region</p>
+      <span class="tag bg-blue">GCP Monitoring API</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-green">&#x1F436;</div>
+      <h3>Datadog Observability</h3>
+      <p>"What do dashboards, monitors, and APM traces show?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">4 steps: SRE dashboard, domain dashboard, alerting monitors, APM traces</p>
+      <span class="tag bg-green">Datadog MCP via Bifrost</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-red">&#x1F41B;</div>
+      <h3>Sentry Error</h3>
+      <p>"Are there new or spiking errors for the affected service?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: recent issues, details, release correlation, rate trend, affected endpoints</p>
+      <span class="tag bg-red">Sentry MCP via Bifrost</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-amber">&#x1F680;</div>
+      <h3>Deploy Correlation</h3>
+      <p>"Was there a recent deployment that could explain this?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: builds, merged PRs, Octopus deploys, ancestor check, file changes</p>
+      <span class="tag bg-amber">ADO MCP + Octopus</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-purple">&#x1F4AC;</div>
+      <h3>Teams Context</h3>
+      <p>"Is there relevant context in Teams channels?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">3 steps: list threads, read relevant, extract observations. Context only &mdash; never evidence.</p>
+      <span class="tag bg-purple">Teams Graph API</span>
+    </div>
+    <div class="card">
+      <div class="icon bg-pink">&#x1F50E;</div>
+      <h3>Known Issues</h3>
+      <p>"Is there an existing ADO bug that matches?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">4 steps: search by endpoint, error type, keywords, rank top 5. A bug filed yesterday IS the answer.</p>
+      <span class="tag bg-pink">ADO MCP via Bifrost</span>
+    </div>
+  </div>
+
+  <h3 style="margin-top:2.5rem; margin-bottom:1rem;"><span class="tier tier-2">TIER 2</span> &nbsp; Conditionally Dispatched by Category</h3>
+  <div class="card-grid" style="grid-template-columns: repeat(5, 1fr);">
+    <div class="card">
+      <div class="icon bg-green">&#x2709;</div>
+      <h3>Pub/Sub</h3>
+      <p>"Backlog, dead letter, or consumer failure?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps incl. tracing the publisher</p>
+    </div>
+    <div class="card">
+      <div class="icon bg-red">&#x26A1;</div>
+      <h3>Cache</h3>
+      <p>"Is Redis/Valkey healthy?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: memory, connections, evictions, hit ratio, Memorystore</p>
+    </div>
+    <div class="card">
+      <div class="icon bg-amber">&#x1F5C4;</div>
+      <h3>SQL DBA</h3>
+      <p>"Is SQL Server the bottleneck?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">10-step deterministic checklist. Ranks by total_hits x avg_duration.</p>
+    </div>
+    <div class="card">
+      <div class="icon bg-purple">&#x1F512;</div>
+      <h3>Auth/Security</h3>
+      <p>"Auth failure, DDoS, WAF, or cert issue?"</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">5 steps: WAF logs, Auth0, certs, JA3, Cloud Armor policies</p>
+    </div>
+    <div class="card">
+      <div class="icon bg-blue">&#x1F4BB;</div>
+      <h3>Codebase</h3>
+      <p>"What does the code say?" (last resort)</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">Token-heavy. Only when Tier 1 + other Tier 2 can't find root cause.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ ROLE-BASED AGENT LAYER ═══════════════ -->
+<section>
+  <div class="section-label">Audience-Aware Output</div>
+  <h2>Role-Based Agent Layer &mdash; SRE / CE / DBA</h2>
+  <p class="subtitle">Investigation agents produce raw findings. Role-based agents filter, prioritize, and present those findings for specific audiences.</p>
+
+  <div class="card-grid card-grid-3">
+    <div class="card" style="border-top: 3px solid var(--green);">
+      <div class="icon bg-green">&#x1F6E0;</div>
+      <h3>SRE Dispatcher</h3>
+      <p><strong>Audience:</strong> SRE on-call engineers</p>
+      <p style="margin-top:0.5rem; font-size:0.82rem;">Surfaces infrastructure signals: Cloud Run health, scaling events, OOM kills, container restarts, resource utilization, deploy correlation. Prioritizes by blast radius and time-to-impact.</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">Posts to: Platform-Alerts, Infrastructure channels</p>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--amber);">
+      <div class="icon bg-amber">&#x1F465;</div>
+      <h3>CE Dispatcher</h3>
+      <p><strong>Audience:</strong> Customer Experience / Support</p>
+      <p style="margin-top:0.5rem; font-size:0.82rem;">Surfaces customer-facing impact: affected endpoints, error rates users see, workarounds if known, estimated scope (how many builders affected). Strips internal infrastructure details.</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">Posts to: Critical Bug, Scrum Escalation channels</p>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--purple);">
+      <div class="icon bg-purple">&#x1F5C4;</div>
+      <h3>DBA Dispatcher</h3>
+      <p><strong>Audience:</strong> Database administrators</p>
+      <p style="margin-top:0.5rem; font-size:0.82rem;">Surfaces SQL signals: blocking chains, top CPU queries (ranked by hits &times; duration), slow traces with full SQL, connection counts, CPU by host. Includes query structure analysis.</p>
+      <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-muted);">Posts to: DBA-specific channels, PagerDuty DBA escalation</p>
+    </div>
+  </div>
+
+  <div class="mermaid" style="margin-top: 1.5rem;">
+    flowchart LR
+      Findings["Raw Investigation\nFindings"] --> Router{"Role-Based\nRouter"}
+      Router -->|infra signals| SRE["SRE Dispatcher\n→ Platform-Alerts"]
+      Router -->|customer impact| CE["CE Dispatcher\n→ Critical Bug"]
+      Router -->|DB signals| DBA["DBA Dispatcher\n→ DBA Channels"]
+      Router -->|all findings| Full["Full Report\n→ Orchestrator"]
+
+      style SRE fill:#064e3b,stroke:#34d399,color:#d1fae5
+      style CE fill:#451a03,stroke:#fbbf24,color:#fef3c7
+      style DBA fill:#2e1065,stroke:#a78bfa,color:#ede9fe
+      style Full fill:#1e293b,stroke:#64748b,color:#e2e8f0
+  </div>
+  <div class="caption">Role-based agents filter the same investigation findings for different audiences. Each role sees only what's relevant to their responsibilities.</div>
+</section>
+
+<!-- ═══════════════ INVESTIGATION RULES ═══════════════ -->
+<section>
+  <div class="section-label">Guardrails</div>
+  <h2>15 Non-Negotiable Investigation Rules</h2>
+  <p class="subtitle">Baked into every agent's system prompt. These override any other instruction and prevent the most common LLM failure modes.</p>
+
+  <div class="rule-grid">
+    <div class="rule"><div class="num">1</div><div><strong>Facts before hypotheses.</strong> Confidence: STRONG EVIDENCE / MODERATE EVIDENCE / WEAK SIGNAL / UNKNOWN. Never use "CONFIRMED."</div></div>
+    <div class="rule"><div class="num">2</div><div><strong>Follow BOTH outlier types.</strong> Duration (30-700s = blocking) AND volume (250K hits = CPU exhaustion).</div></div>
+    <div class="rule"><div class="num">3</div><div><strong>Treat each incident independently.</strong> Past incidents inform where to start, not the answer.</div></div>
+    <div class="rule"><div class="num">4</div><div><strong>Search ADO first.</strong> A bug filed yesterday IS the answer.</div></div>
+    <div class="rule"><div class="num">5</div><div><strong>Per-query, not aggregate.</strong> Drill past blocked-resource to find head blocker.</div></div>
+    <div class="rule"><div class="num">6</div><div><strong>Deploy correlation &ne; causation.</strong> Prove with code change AND errors only on new revision.</div></div>
+    <div class="rule"><div class="num">7</div><div><strong>Only flag new PRs.</strong> Use git merge-base --is-ancestor to verify.</div></div>
+    <div class="rule"><div class="num">8</div><div><strong>Report incrementally.</strong> Share findings as each agent completes.</div></div>
+    <div class="rule"><div class="num">9</div><div><strong>All times in CST.</strong></div></div>
+    <div class="rule"><div class="num">10</div><div><strong>Teams = input, not evidence.</strong> Verify with metrics before attributing cause.</div></div>
+    <div class="rule"><div class="num">11</div><div><strong>Analyze query structure.</strong> Duration = WHAT is slow. Query text = WHY.</div></div>
+    <div class="rule"><div class="num">12</div><div><strong>PubSub: trace the publisher.</strong> Consumer failure is the symptom.</div></div>
+    <div class="rule"><div class="num">13</div><div><strong>Stay in lane.</strong> Flag cross-domain findings for orchestrator dispatch.</div></div>
+    <div class="rule"><div class="num">14</div><div><strong>Read-only enforcement.</strong> Double-enforced: Bifrost allowlists + agent prompts.</div></div>
+    <div class="rule"><div class="num">15</div><div><strong>Exclude self.</strong> IR platform services never investigated &mdash; prevents feedback loops.</div></div>
+  </div>
+</section>
+
+<!-- ═══════════════ SECURITY & RESILIENCE ═══════════════ -->
+<section id="security">
+  <div class="section-label">Security &amp; Resilience</div>
+  <h2>Hardened by Adversarial Review</h2>
+  <p class="subtitle">4-perspective red team evaluation (scale, security, cost, operations) identified 16 findings. All critical and high findings are addressed in Phase 1.</p>
+
+  <div class="split" style="margin-top: 2rem;">
+    <div>
+      <h3>Threat Model</h3>
+      <table>
+        <thead><tr><th>Vector</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td class="text-red">Prompt injection via alert payloads</td><td>Payload sanitizer strips HTML, truncates fields, escapes injection patterns before LLM ingestion</td></tr>
+          <tr><td class="text-red">Write tool exposure via MCP wildcard</td><td>Per-server read-only allowlists replace <code>["*"]</code>. Datadog: 5/86 tools. ADO: 5/47 tools.</td></tr>
+          <tr><td class="text-amber">PII in content logs</td><td>Access controls on Firestore. 90-day retention. No raw SQL params in findings.</td></tr>
+          <tr><td class="text-amber">LLM confidence anchoring</td><td>Banned "CONFIRMED" label. STRONG EVIDENCE is the ceiling.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Resilience Design</h3>
+      <table>
+        <thead><tr><th>Failure Mode</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td class="text-red">Container killed mid-investigation</td><td>Agent Engine Sessions + checkpointing. Resume from last saved finding.</td></tr>
+          <tr><td class="text-red">Dedup race across instances</td><td>Firestore transactions.</td></tr>
+          <tr><td class="text-amber">Bifrost gateway down</td><td>Circuit breaker: 30s of 5xx &rarr; fallback to direct Vertex AI (degraded mode).</td></tr>
+          <tr><td class="text-amber">Self-referential alert loop</td><td>Self-exclusion filter: <code>aiops-*-run-ir-*</code> alerts logged but never investigated.</td></tr>
+          <tr><td class="text-amber">Teams channel spam during storms</td><td>90s batch window. Max 10 posts/channel/15min. Storm mode aggregation.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ DATA MODEL ═══════════════ -->
+<section id="data">
+  <div class="section-label">Data Layer</div>
+  <h2>Firestore Schema &amp; Knowledge Base</h2>
+  <p class="subtitle">Every incident builds institutional memory. Firestore collections store structured incident data for faster future triage.</p>
+
+  <div class="diagram-wrap">
+    <pre class="mermaid">
+erDiagram
+    incidents {
+        string id PK
+        timestamp created_at
+        timestamp resolved_at
+        string status
+        string category
+        string severity
+        string title
+        string summary
+        map alert_payload
+        array services_affected
+        string source
+    }
+
+    decision_trees {
+        string id PK
+        string category
+        string condition
+        string action
+        number success_count
+        number total_count
+        number confidence
+    }
+
+    incidents ||--o{ decision_trees : tracks
+    </pre>
+    <div class="caption">Firestore collections (Native mode, us-central1, aiops-dev-project) &mdash; incidents and decision_trees. Session state handled by Agent Engine.</div>
+  </div>
+
+  <div class="card-grid card-grid-3" style="margin-top:1.5rem;">
+    <div class="card">
+      <h3 class="text-accent">Semantic Search</h3>
+      <p>Firestore structured queries for similar incidents. Vertex AI Vector Search for semantic similarity (Phase 2).</p>
+    </div>
+    <div class="card">
+      <h3 class="text-accent">Learning Loop</h3>
+      <p>Post-incident debrief (13 standard questions) feeds back into decision_tree_nodes. Success/total counts build confidence for auto-routing in Phase 2.</p>
+    </div>
+    <div class="card">
+      <h3 class="text-accent">Serverless Scaling</h3>
+      <p>Firestore Native mode in aiops-dev-project. No connection pooling needed. Session state handled by Agent Engine (VertexAiSessionService).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ BIFROST INTEGRATION ═══════════════ -->
+<section>
+  <div class="section-label">Tool Access</div>
+  <h2>Bifrost Gateway &mdash; Read-Only Allowlists</h2>
+  <p class="subtitle">All external tool access routes through Bifrost with explicit per-server allowlists. Phase 1 exposes only read operations.</p>
+
+  <table>
+    <thead><tr><th>MCP Server</th><th>Allowed Tools (Phase 1)</th><th>Blocked</th><th>Used By</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Datadog</strong></td>
+        <td><code>get_dashboard</code>, <code>get_monitors</code>, <code>list_traces</code>, <code>query_metrics</code>, <code>search_monitors</code></td>
+        <td class="text-muted">81 write tools (create_monitor, update_dashboard, etc.)</td>
+        <td>Datadog Obs, SQL DBA, Cache, Auth</td>
+      </tr>
+      <tr>
+        <td><strong>Azure DevOps</strong></td>
+        <td><code>search_workitem</code>, <code>wit_get_work_items_batch</code>, <code>repo_list_pull_requests</code>, <code>repo_get_pull_request</code>, <code>pipelines_get_builds</code></td>
+        <td class="text-muted">42 write tools (create_work_item, update_pr, etc.)</td>
+        <td>Deploy Correlation, Known Issues</td>
+      </tr>
+      <tr>
+        <td><strong>Sentry</strong></td>
+        <td><code>list_issues</code>, <code>get_issue</code>, <code>list_releases</code>, <code>get_project</code></td>
+        <td class="text-muted">~16 write tools</td>
+        <td>Sentry Error</td>
+      </tr>
+      <tr>
+        <td><strong>Atlassian</strong></td>
+        <td><code>search_confluence</code>, <code>get_page</code></td>
+        <td class="text-muted">~27 write tools</td>
+        <td>Orchestrator (runbooks)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════ ROADMAP ═══════════════ -->
+<section id="roadmap">
+  <div class="section-label">Implementation</div>
+  <h2>Phased Rollout</h2>
+  <p class="subtitle">6 phases. Phase 1 is read-only, human-in-the-loop. Each phase has a clear trigger for the next.</p>
+
+  <div class="split wide-left">
+    <div class="timeline">
+      <div class="timeline-item">
+        <h3><span class="text-accent">Phase 1</span> &mdash; Scaffold &amp; Infrastructure</h3>
+        <p>Repo, ADK project, webhook frontend with payload sanitizer, Firestore collections (incidents, decision_trees), Bifrost tool allowlists, Sentry internal integration, Cloud Run service YAMLs, ADO pipeline.</p>
+      </div>
+      <div class="timeline-item">
+        <h3><span class="text-accent">Phase 2</span> &mdash; Core Agents</h3>
+        <p>Classification agent, historical search, all 16 investigation agents (9 Tier 1, 5 Tier 2, 3 role-based dispatchers), synthesis agent, verification agent, report generator, investigation checkpointing, Bifrost circuit breaker, ADK wiring with Agent Engine Sessions.</p>
+      </div>
+      <div class="timeline-item">
+        <h3><span class="text-accent">Phase 3</span> &mdash; Teams Integration</h3>
+        <p>Entra ID app, Graph API tool, Teams message batching (90s buffer, rate limits, storm mode), orchestrator posting rules, channel polling.</p>
+      </div>
+      <div class="timeline-item">
+        <h3><span class="text-accent">Phase 4</span> &mdash; Deduplication Engine</h3>
+        <p>Firestore-backed dedup (Pass 1 + Pass 2), self-exclusion filter, merge logic.</p>
+      </div>
+      <div class="timeline-item">
+        <h3><span class="text-accent">Phase 5</span> &mdash; Post-Incident &amp; KB</h3>
+        <p>Debrief agent (13 questions via Teams), KB write with embeddings, decision tree updates.</p>
+      </div>
+      <div class="timeline-item">
+        <h3><span class="text-accent">Phase 6</span> &mdash; Deploy &amp; Test</h3>
+        <p>Dev deploy, webhook registration, E2E test, load test (100 concurrent alerts), checkpoint resume test, Teams spam test.</p>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom: 1rem;">Future Phases</h3>
+      <div class="card" style="margin-bottom: 1rem;">
+        <h3>Optimization</h3>
+        <p>Bifrost cache optimization, GCP MCP server, stale-finding refresh, Tier 1 agent consolidation based on KB data.</p>
+        <span class="tag bg-blue">Trigger: Phase 1 stable + 50 incidents</span>
+      </div>
+      <div class="card" style="margin-bottom: 1rem;">
+        <h3>Phase 3+</h3>
+        <p>Response agents &mdash; execute remediation (restart, scale, rollback) with approval gates.</p>
+        <span class="tag bg-amber">Trigger: 50+ incidents in KB</span>
+      </div>
+      <div class="card">
+        <h3>Phase N</h3>
+        <p>Full A2A protocol for cross-platform agent collaboration.</p>
+        <span class="tag bg-purple">Trigger: ADK ships A2A GA</span>
+      </div>
+
+      <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Cloud Run Services</h3>
+      <table>
+        <thead><tr><th>Service</th><th>Scale</th></tr></thead>
+        <tbody>
+          <tr><td>Webhook Frontend<br><code class="text-muted" style="font-size:0.75rem;">aiops-{env}-run-ir-webhook-us-c1</code></td><td>1&ndash;10</td></tr>
+          <tr><td>Orchestrator<br><code class="text-muted" style="font-size:0.75rem;">aiops-{env}-run-ir-orchestrator-us-c1</code></td><td>0&ndash;50</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ SUMMARY ═══════════════ -->
+<section>
+  <div class="section-label">Summary</div>
+  <h2>What We're Building</h2>
+
+  <div class="card-grid card-grid-3" style="margin-top: 1.5rem;">
+    <div class="card" style="border-color: var(--green);">
+      <h3 class="text-green">Phase 1 Delivers</h3>
+      <ul style="font-size:0.88rem; color:var(--text-muted); padding-left:1.2rem; margin-top:0.5rem;">
+        <li>Automated alert ingestion from 4 sources</li>
+        <li>Two-pass dedup (atomic, race-free)</li>
+        <li>16 investigation agents (9 Tier 1, 5 Tier 2, verification, 3 role-based dispatchers)</li>
+        <li>Findings posted to Teams (batched)</li>
+        <li>Knowledge base that learns from every incident</li>
+        <li>Read-only. Human-in-the-loop.</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color: var(--accent);">
+      <h3 class="text-accent">Architecture Principles</h3>
+      <ul style="font-size:0.88rem; color:var(--text-muted); padding-left:1.2rem; margin-top:0.5rem;">
+        <li>Deterministic agents, not open-ended exploration</li>
+        <li>Functional scope, not tool boundary</li>
+        <li>Hub-and-spoke, not peer-to-peer</li>
+        <li>Double-enforced read-only (gateway + prompt)</li>
+        <li>Checkpoint/resume for resilience</li>
+        <li>Every design choice is reversible</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color: var(--amber);">
+      <h3 class="text-amber">What We Need</h3>
+      <ul style="font-size:0.88rem; color:var(--text-muted); padding-left:1.2rem; margin-top:0.5rem;">
+        <li>Architecture approval to proceed</li>
+        <li>Bifrost virtual key + allowlist config</li>
+        <li>Sentry internal integration token</li>
+        <li>Entra ID app registration for Teams</li>
+        <li>Firestore collections in aiops-dev-project</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  IR Agent Platform &mdash; Architecture Review &mdash; June 2026<br>
+  <span style="color: var(--text-muted);">Google ADK 2.2.0 &middot; Agent Engine &middot; Bifrost Gateway &middot; claude-sonnet-4-6 &middot; AIOps &middot; acme</span>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1e40af',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#3b82f6',
+      lineColor: '#64748b',
+      secondaryColor: '#4c1d95',
+      tertiaryColor: '#1e293b',
+      fontFamily: 'Segoe UI, system-ui, sans-serif',
+      fontSize: '14px',
+      background: '#1a1d27',
+      mainBkg: '#1e293b',
+      nodeBorder: '#334155',
+      clusterBkg: '#0f172a',
+      clusterBorder: '#334155',
+      edgeLabelBackground: '#1a1d27',
+      nodeTextColor: '#e2e8f0',
+    },
+    flowchart: {
+      curve: 'basis',
+      padding: 20,
+      htmlLabels: true,
+      useMaxWidth: true,
+    },
+    er: {
+      useMaxWidth: true,
+    }
+  });
+</script>
+<script>
+(function() {
+  function initZoom() {
+    document.querySelectorAll('.diagram-wrap').forEach(function(wrap) {
+      var svg = wrap.querySelector('svg');
+      if (!svg || wrap.querySelector('.zoom-controls')) return;
+      var inner = svg.parentElement;
+      var viewport = document.createElement('div');
+      viewport.className = 'diagram-zoom-viewport';
+      var zoomInner = document.createElement('div');
+      zoomInner.className = 'zoom-inner';
+      var controls = document.createElement('div');
+      controls.className = 'zoom-controls';
+      controls.innerHTML = '<button class="zoom-btn" data-z="in" title="Zoom in">+</button>'
+        + '<button class="zoom-btn" data-z="out" title="Zoom out">&minus;</button>'
+        + '<span class="zoom-level">100%</span>'
+        + '<button class="zoom-btn" data-z="reset" title="Reset">&#x27F2;</button>';
+      inner.parentNode.insertBefore(viewport, inner);
+      viewport.appendChild(controls);
+      zoomInner.appendChild(inner);
+      viewport.appendChild(zoomInner);
+      var scale = 1, tx = 0, ty = 0, dragging = false, sx, sy;
+      var lvl = controls.querySelector('.zoom-level');
+      function upd() {
+        zoomInner.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+        lvl.textContent = Math.round(scale * 100) + '%';
+      }
+      viewport.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        scale = Math.min(4, Math.max(0.25, scale + (e.deltaY > 0 ? -0.1 : 0.1)));
+        upd();
+      }, {passive: false});
+      controls.addEventListener('click', function(e) {
+        var b = e.target.closest('[data-z]');
+        if (!b) return;
+        if (b.dataset.z === 'in') scale = Math.min(4, scale + 0.2);
+        else if (b.dataset.z === 'out') scale = Math.max(0.25, scale - 0.2);
+        else { scale = 1; tx = 0; ty = 0; }
+        upd();
+      });
+      viewport.addEventListener('mousedown', function(e) {
+        if (e.target.closest('.zoom-controls')) return;
+        dragging = true; sx = e.clientX - tx; sy = e.clientY - ty;
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        tx = e.clientX - sx; ty = e.clientY - sy; upd();
+      });
+      document.addEventListener('mouseup', function() { dragging = false; });
+    });
+  }
+  function poll() { document.querySelector('.diagram-wrap svg') ? initZoom() : setTimeout(poll, 150); }
+  document.addEventListener('DOMContentLoaded', function() { setTimeout(poll, 300); });
+})();
+</script>
+</body>
+</html>

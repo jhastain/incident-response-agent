@@ -1,0 +1,43 @@
+{
+  "agent_name": "incident_response_agent",
+  "secret_name": "incident-response-agent-bfvk",
+  "_note": "The Incident Response Agent reaches these Bifrost MCP servers through the unified gateway. datadog_token and sentry_token are used directly; azure_devops_token provides work-item and repo tools (no pipeline tools are exposed on this VK — pipeline analysis uses the direct ADO REST tools in app/tools/ado_pipeline_tools.py). The VK governs which servers/tools are actually exposed at runtime.",
+  "mcp_servers": [
+    {
+      "name": "datadog_token",
+      "tools": [
+        "get_datadog_trace",
+        "search_datadog_spans",
+        "search_datadog_services",
+        "search_datadog_dashboards",
+        "get_datadog_dashboard",
+        "search_datadog_metrics",
+        "get_datadog_metric",
+        "search_datadog_logs",
+        "analyze_datadog_logs",
+        "search_datadog_events",
+        "search_datadog_error_tracking_issues",
+        "get_datadog_error_tracking_issue"
+      ]
+    },
+    {
+      "name": "sentry_token",
+      "tools": [
+        "search_sentry_issues",
+        "get_sentry_issue",
+        "get_sentry_event",
+        "list_sentry_issue_events"
+      ]
+    },
+    {
+      "name": "azure_devops_token",
+      "tools": [
+        "get_work_item",
+        "search_work_items",
+        "list_repositories",
+        "get_repository",
+        "search_code"
+      ]
+    }
+  ]
+}

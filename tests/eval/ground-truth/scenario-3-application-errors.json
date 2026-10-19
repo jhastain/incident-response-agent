@@ -1,0 +1,36 @@
+{
+  "scenario_id": "application-errors-release-regression",
+  "category": "application-errors",
+  "severity": "sev2",
+  "service": "webcore-dotnet",
+  "environment": "production",
+  "gcp_project": "acme-production-100000",
+  "root_cause_summary": "An admin login endpoint began returning 5xx immediately after a release. The release changed a client-side call site to pass a parameter the handler did not accept, so every admin login threw before reaching authentication.",
+  "root_cause_confidence": "likely",
+  "tier2_agents_expected": [
+    "codebase_agent"
+  ],
+  "key_findings": [
+    "Error rate on the admin login route rose from 0.2% to 9.4% within 12 minutes of the release",
+    "First error timestamp falls inside the deploy window for that release",
+    "The non-admin login route, which does not share the call site, is unaffected",
+    "Stack trace terminates in the changed call site, not in the auth layer"
+  ],
+  "tags": [
+    "release-regression",
+    "admin-route",
+    "call-site-mismatch",
+    "parameter-contract",
+    "deploy-window",
+    "unaffected-sibling-route",
+    "stack-trace-terminus",
+    "error-rate-step"
+  ],
+  "telemetry_baseline": {
+    "total_tokens": 240000,
+    "total_tool_uses": 95,
+    "agents_dispatched": 6,
+    "agents_completed": 6,
+    "agents_skipped": 3
+  }
+}
